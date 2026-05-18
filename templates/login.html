@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureAuth — AI/ML-Enhanced MFA Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="page">
+  <div class="split">
+
+    <!-- ── Main Card ── -->
+    <div class="card card-main">
+      <div class="logo">
+        <div class="logo-icon">🛡️</div>
+        <div>
+          <h1>SecureAuth</h1>
+          <span>AI/ML-Enhanced MFA System</span>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }}">⚠️ {{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="/">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <div class="inp-wrap">
+            <input type="text" id="username" name="username" placeholder="Enter username" required autocomplete="username">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="inp-wrap">
+            <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="current-password">
+            <button type="button" class="eye-btn" onclick="togglePwd()" title="Show/hide">👁</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="device_id">Device ID <span class="badge">Auto-detected</span></label>
+          <div class="inp-wrap">
+            <input type="text" id="device_id" name="device_id" class="mono" readonly>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top:0.5rem">
+          🔐 Authenticate
+        </button>
+      </form>
+
+      <hr class="divider">
+
+      <!-- Demo credentials -->
+      <div class="demo-panel">
+        <button class="demo-toggle" onclick="toggleDemo(this)">🧪 Test Credentials (click to expand)</button>
+        <div id="demo-creds" class="demo-creds hidden">
+          <div class="cred-card" onclick="fill('alice','Password123!')">
+            <span class="cred-name">alice</span>
+            <span class="cred-pass">Password123!</span>
+            <span class="cred-tag tag-new">First Login</span>
+          </div>
+          <div class="cred-card" onclick="fill('bob','SecurePass456!')">
+            <span class="cred-name">bob</span>
+            <span class="cred-pass">SecurePass456!</span>
+            <span class="cred-tag tag-unknown">Unknown Device</span>
+          </div>
+          <div class="cred-card" onclick="fill('admin','AdminSecure789!')">
+            <span class="cred-name">admin</span>
+            <span class="cred-pass">AdminSecure789!</span>
+            <span class="cred-tag tag-admin">Admin</span>
+          </div>
+          <p style="font-size:0.75rem;color:var(--muted);margin-top:6px">
+            💡 Try 5 wrong passwords to trigger brute-force blocking.
+          </p>
+        </div>
+      </div>
+
+      <p style="text-align:center;margin-top:1.5rem;font-size:0.8rem;color:var(--muted)">
+        <a class="link" href="/logs">📋 View Attack Logs</a>
+      </p>
+    </div>
+
+    <!-- ── Side Info Card ── -->
+    <div class="card card-side">
+      <p style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:1rem">
+        🤖 AI/ML Detection Features
+      </p>
+      <ul class="feat-list">
+        <li class="feat-item">
+          <span class="feat-icon">🔢</span>
+          <div><strong>Failed Attempts</strong><p>Score +2 after 3 consecutive failures</p></div>
+        </li>
+        <li class="feat-item">
+          <span class="feat-icon">⚡</span>
+          <div><strong>Rapid Attempts</strong><p>Score +2 if attempts &lt; 5s apart</p></div>
+        </li>
+        <li class="feat-item">
+          <span class="feat-icon">💻</span>
+          <div><strong>Unknown Device</strong><p>Score +1 for unrecognised device</p></div>
+        </li>
+        <li class="feat-item">
+          <span class="feat-icon">🌙</span>
+          <div><strong>Unusual Hour</strong><p>Score +1 for logins between 12–5 AM</p></div>
+        </li>
+        <li class="feat-item">
+          <span class="feat-icon">❌</span>
+          <div><strong>Wrong Password</strong><p>Score +2 per failed credential</p></div>
+        </li>
+      </ul>
+
+      <hr class="divider">
+
+      <div class="score-grid">
+        <div class="score-item">
+          <div class="si-label">LOW RISK</div>
+          <div class="si-val green">Score &lt; 3</div>
+        </div>
+        <div class="score-item">
+          <div class="si-label">MEDIUM RISK</div>
+          <div class="si-val yellow">Score 3–4</div>
+        </div>
+        <div class="score-item" style="grid-column:span 2">
+          <div class="si-label">HIGH RISK — Blocked</div>
+          <div class="si-val red">Score ≥ 5</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <p style="font-size:0.75rem;color:var(--muted);line-height:1.6">
+        🧠 Powered by a <strong>Decision Tree</strong> classifier trained on
+        3,000 synthetic login events with 5 behavioral features.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── Device fingerprint ──
+  function fingerprint() {
+    const raw = [navigator.userAgent, screen.width+'x'+screen.height,
+                 screen.colorDepth, navigator.language,
+                 new Date().getTimezoneOffset()].join('|');
+    let h = 0;
+    for (let i = 0; i < raw.length; i++) { h = Math.imul(31, h) + raw.charCodeAt(i) | 0; }
+    return 'dev-' + Math.abs(h).toString(36).slice(0,8);
+  }
+  document.getElementById('device_id').value = fingerprint();
+
+  function togglePwd() {
+    const p = document.getElementById('password');
+    p.type = p.type === 'password' ? 'text' : 'password';
+  }
+  function toggleDemo(btn) {
+    const d = document.getElementById('demo-creds');
+    d.classList.toggle('hidden');
+    btn.textContent = d.classList.contains('hidden')
+      ? '🧪 Test Credentials (click to expand)'
+      : '🧪 Test Credentials (click to hide)';
+  }
+  function fill(u, p) {
+    document.getElementById('username').value = u;
+    document.getElementById('password').value = p;
+  }
+</script>
+</body>
+</html>

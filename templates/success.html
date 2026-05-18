@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureAuth — Login Successful</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="page">
+  <div class="split">
+
+    <div class="card success-card card-main">
+      <div class="success-icon">✅</div>
+      <h2 style="text-align:center;color:var(--green);margin-bottom:0.5rem">Authentication Successful</h2>
+      <p style="text-align:center;color:var(--muted);font-size:0.88rem;margin-bottom:1.8rem">
+        Welcome back, <strong style="color:var(--text)">{{ username }}</strong>. Both factors verified.
+      </p>
+
+      <!-- Risk summary -->
+      <div style="display:flex;justify-content:center;margin-bottom:1.8rem">
+        <span class="risk-pill risk-{{ risk_level }}">
+          {% if risk_level=='low' %}🟢{% elif risk_level=='medium' %}🟡{% else %}🔴{% endif %}
+          Session Risk: {{ risk_level|upper }}
+        </span>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-item">
+          <div class="si-label">Rule Score</div>
+          <div class="si-val {% if rule_score < 3 %}green{% elif rule_score < 5 %}yellow{% else %}red{% endif %}">
+            {{ rule_score }} / 8
+          </div>
+        </div>
+        <div class="score-item">
+          <div class="si-label">ML Confidence</div>
+          <div class="si-val cyan">{{ confidence }}%</div>
+        </div>
+        <div class="score-item">
+          <div class="si-label">Auth Method</div>
+          <div class="si-val green" style="font-size:0.85rem">Password + OTP</div>
+        </div>
+        <div class="score-item">
+          <div class="si-label">MFA Status</div>
+          <div class="si-val green" style="font-size:0.85rem">Verified ✓</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div style="background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.5rem">
+        <p style="font-size:0.82rem;color:var(--muted);line-height:1.7">
+          🛡️ <strong style="color:var(--green)">How the system protected you:</strong><br>
+          ✔ Password was verified against the credential store<br>
+          ✔ 5 behavioral features were extracted and scored<br>
+          ✔ Decision Tree ML model classified the risk level<br>
+          ✔ OTP was generated and verified as the second factor<br>
+          ✔ Access granted only after both factors passed
+        </p>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <a href="/logs" class="btn btn-ghost" style="text-decoration:none;flex:1;justify-content:center;display:flex">
+          📋 Attack Logs
+        </a>
+        <a href="/logout" class="btn btn-primary" style="text-decoration:none;flex:1;justify-content:center;display:flex">
+          🔒 Logout
+        </a>
+      </div>
+    </div>
+
+    <div class="card card-side">
+      <p style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:1rem">
+        📊 Session Security Summary
+      </p>
+      <ul class="feat-list">
+        <li class="feat-item">
+          <span class="feat-icon">🔐</span>
+          <div><strong>Multi-Factor Authentication</strong>
+            <p>Two independent factors verified: knowledge (password) + possession (OTP).</p></div>
+        </li>
+        <li class="feat-item">
+          <span class="feat-icon">🧠</span>
+          <div><strong>AI/ML Risk Engine</strong>
+            <p>Decision Tree classifier evaluated 5 behavioral features in real-time.</p></div>
+        </li>
+        <li class="feat-item">
+          <span class="feat-icon">🚫</span>
+          <div><strong>Brute-Force Protection</strong>
+            <p>Account locks after {{ 5 }} failed attempts for 60 seconds.</p></div>
+        </li>
+        <li class="feat-item">
+          <span class="feat-icon">📋</span>
+          <div><strong>Audit Logging</strong>
+            <p>All login events (successful and failed) are logged with risk scores.</p></div>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

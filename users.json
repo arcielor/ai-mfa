@@ -1,0 +1,20 @@
+{
+  "alice": {
+    "password": "Password123!",
+    "email": "alice@demo.com",
+    "known_device": "dev-r67dgv",
+    "role": "student"
+  },
+  "bob": {
+    "password": "SecurePass456!",
+    "email": "bob@demo.com",
+    "known_device": "phone-02",
+    "role": "student"
+  },
+  "admin": {
+    "password": "AdminSecure789!",
+    "email": "admin@demo.com",
+    "known_device": "admin-workstation",
+    "role": "admin"
+  }
+}

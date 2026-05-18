@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureAuth — OTP Verification</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="page">
+  <div class="split">
+
+    <div class="card card-main">
+      <div class="logo">
+        <div class="logo-icon">🔑</div>
+        <div>
+          <h1>MFA Verification</h1>
+          <span>Step 2 of 2 — One-Time Password</span>
+        </div>
+      </div>
+
+      <!-- Risk badge -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap">
+        <span class="risk-pill risk-{{ risk_level }}">
+          {% if risk_level == 'low' %}🟢{% elif risk_level == 'medium' %}🟡{% else %}🔴{% endif %}
+          {{ risk_level|upper }} RISK
+        </span>
+        <span style="font-size:0.8rem;color:var(--muted)">
+          Rule score: <strong style="color:var(--text)">{{ rule_score }}/8</strong> &nbsp;|&nbsp;
+          ML confidence: <strong style="color:var(--cyan)">{{ confidence }}%</strong>
+        </span>
+      </div>
+
+      <!-- Risk meter -->
+      <div class="risk-meter">
+        <div class="risk-meter-label">
+          <span>Threat Level</span>
+          <span>{{ risk_level|upper }}</span>
+        </div>
+        <div class="risk-bar">
+          <div class="risk-fill {{ risk_level }}"></div>
+        </div>
+      </div>
+
+      <!-- DEMO OTP display -->
+      <div class="demo-otp-box">
+        <div class="demo-label">⚠️ DEMO MODE — OTP (would be sent via email in production)</div>
+        <div class="otp-val" id="otp-display">{{ demo_otp }}</div>
+        <div style="margin-top:8px">
+          <button onclick="copyOtp()" style="background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:var(--yellow);border-radius:6px;padding:4px 14px;cursor:pointer;font-size:0.8rem;font-family:inherit">
+            📋 Copy OTP
+          </button>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }}">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="/otp">
+        <div class="form-group">
+          <label for="otp">Enter 6-Digit OTP</label>
+          <input type="text" id="otp" name="otp" class="otp-input"
+            maxlength="6" placeholder="––––––" autocomplete="one-time-code"
+            inputmode="numeric" pattern="\d{6}" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:0.8rem">
+          ✅ Verify OTP
+        </button>
+      </form>
+
+      <hr class="divider">
+      <div style="text-align:center">
+        <a href="/logout" class="link">← Back to Login</a>
+      </div>
+    </div>
+
+    <!-- Side info -->
+    <div class="card card-side">
+      <p style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:1rem">
+        🛡️ Risk Analysis — {{ username }}
+      </p>
+
+      <div class="score-grid">
+        <div class="score-item">
+          <div class="si-label">Risk Level</div>
+          <div class="si-val {% if risk_level=='low' %}green{% elif risk_level=='medium' %}yellow{% else %}red{% endif %}">
+            {{ risk_level|upper }}
+          </div>
+        </div>
+        <div class="score-item">
+          <div class="si-label">Rule Score</div>
+          <div class="si-val cyan">{{ rule_score }} / 8</div>
+        </div>
+        <div class="score-item" style="grid-column:span 2">
+          <div class="si-label">ML Classifier Confidence</div>
+          <div class="si-val cyan">{{ confidence }}%</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <ul class="feat-list">
+        {% if risk_level == 'low' %}
+        <li class="feat-item">
+          <span class="feat-icon">✅</span>
+          <div><strong>Normal Login Behaviour</strong>
+            <p>No suspicious signals detected. Standard MFA applied.</p></div>
+        </li>
+        {% elif risk_level == 'medium' %}
+        <li class="feat-item">
+          <span class="feat-icon">⚠️</span>
+          <div><strong>Suspicious Activity Detected</strong>
+            <p>A 3-second delay was applied before MFA. Monitor this account.</p></div>
+        </li>
+        {% else %}
+        <li class="feat-item">
+          <span class="feat-icon">🚨</span>
+          <div><strong>High-Risk Login Detected</strong>
+            <p>Multiple threat signals triggered. This session is under elevated scrutiny.</p></div>
+        </li>
+        {% endif %}
+        <li class="feat-item">
+          <span class="feat-icon">⏱️</span>
+          <div><strong>OTP Expires in 5 minutes</strong>
+            <p>The code above is single-use and time-limited.</p></div>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function copyOtp() {
+    const otp = document.getElementById('otp-display').textContent.trim();
+    navigator.clipboard.writeText(otp).then(() => {
+      document.getElementById('otp').value = otp;
+    });
+  }
+  // Auto-focus OTP field
+  document.getElementById('otp').focus();
+</script>
+</body>
+</html>

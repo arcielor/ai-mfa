@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureAuth — Attack Logs Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="logs-wrap">
+
+  <div class="logs-header">
+    <div>
+      <h2>📋 Login Attempt Logs</h2>
+      <p style="font-size:0.82rem;color:var(--muted);margin-top:4px">
+        Real-time audit trail — all login events with AI/ML risk scores
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="/" class="btn btn-ghost" style="text-decoration:none;padding:8px 18px;width:auto">← Login</a>
+      <form method="POST" action="/clear-logs" onsubmit="return confirm('Clear all logs?')">
+        <button type="submit" class="btn btn-danger" style="padding:8px 18px;width:auto">🗑 Clear Logs</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Summary stats -->
+  {% set total = logs|length %}
+  {% set granted = logs|selectattr('outcome','equalto','access_granted')|list|length %}
+  {% set blocked_count = logs|selectattr('action','equalto','blocked')|list|length %}
+  {% set high_risk = logs|selectattr('risk_level','equalto','high')|list|length %}
+
+  <div class="score-grid" style="max-width:600px;margin-bottom:1.5rem">
+    <div class="score-item">
+      <div class="si-label">Total Events</div>
+      <div class="si-val cyan">{{ total }}</div>
+    </div>
+    <div class="score-item">
+      <div class="si-label">Access Granted</div>
+      <div class="si-val green">{{ granted }}</div>
+    </div>
+    <div class="score-item">
+      <div class="si-label">Blocked</div>
+      <div class="si-val red">{{ blocked_count }}</div>
+    </div>
+    <div class="score-item">
+      <div class="si-label">High-Risk Events</div>
+      <div class="si-val red">{{ high_risk }}</div>
+    </div>
+  </div>
+
+  {% if logs %}
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>IP</th>
+            <th>Risk Level</th>
+            <th>Score</th>
+            <th>ML Conf.</th>
+            <th>Failed Att.</th>
+            <th>Rapid</th>
+            <th>Unk. Device</th>
+            <th>Unusual Hr</th>
+            <th>Action</th>
+            <th>Outcome</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td style="color:var(--muted)">{{ log.id }}</td>
+            <td style="font-family:var(--mono);font-size:0.75rem;color:var(--muted)">{{ log.timestamp }}</td>
+            <td><strong>{{ log.username }}</strong></td>
+            <td style="font-family:var(--mono);font-size:0.75rem">{{ log.ip }}</td>
+            <td>
+              <span class="risk-pill risk-{{ log.risk_level }}" style="font-size:0.7rem;padding:2px 8px">
+                {{ log.risk_level|upper }}
+              </span>
+            </td>
+            <td style="font-family:var(--mono);text-align:center">
+              <strong style="color:{% if log.rule_score >= 5 %}var(--red){% elif log.rule_score >= 3 %}var(--yellow){% else %}var(--green){% endif %}">
+                {{ log.rule_score }}
+              </strong>
+            </td>
+            <td style="font-family:var(--mono);font-size:0.82rem;color:var(--cyan)">
+              {{ log.ml_confidence }}%
+            </td>
+            <td style="text-align:center">
+              <span style="color:{% if log.failed_attempts >= 3 %}var(--red){% else %}var(--muted){% endif %}">
+                {{ log.failed_attempts }}
+              </span>
+            </td>
+            <td style="text-align:center">{{ '⚡' if log.short_interval else '—' }}</td>
+            <td style="text-align:center">{{ '⚠️' if log.unknown_device else '✓' }}</td>
+            <td style="text-align:center">{{ '🌙' if log.unusual_hour else '—' }}</td>
+            <td style="font-size:0.78rem;color:var(--muted)">{{ log.action }}</td>
+            <td>
+              {% set oc = log.outcome %}
+              {% if oc == 'access_granted' %}
+                <span class="outcome-chip oc-granted">✅ Granted</span>
+              {% elif oc == 'pending_mfa' %}
+                <span class="outcome-chip oc-pending">⏳ Pending MFA</span>
+              {% elif oc == 'wrong_password' %}
+                <span class="outcome-chip oc-wrong">❌ Wrong Pwd</span>
+              {% elif oc == 'threshold_exceeded' or oc == 'high_risk' %}
+                <span class="outcome-chip oc-blocked">🚫 Blocked</span>
+              {% elif oc == 'wrong_otp' %}
+                <span class="outcome-chip oc-denied">🔑 Wrong OTP</span>
+              {% else %}
+                <span class="outcome-chip oc-denied">{{ oc }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:3rem">
+    <p style="font-size:2rem;margin-bottom:1rem">📭</p>
+    <p style="color:var(--muted)">No login events recorded yet. <a href="/" class="link">Try logging in</a>.</p>
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>

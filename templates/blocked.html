@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureAuth — Access Blocked</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="page">
+  <div style="max-width:460px;width:100%">
+    <div class="card blocked-card">
+      <div class="blocked-icon">🚫</div>
+      <h2 style="text-align:center;color:var(--red);margin-bottom:0.5rem">Access Temporarily Blocked</h2>
+      <p style="text-align:center;color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem">
+        Suspicious login behaviour detected for <strong style="color:var(--text)">{{ username }}</strong>.
+        The AI/ML risk engine has triggered a temporary block.
+      </p>
+
+      <div class="countdown" id="timer">{{ remaining }}</div>
+      <p style="text-align:center;font-size:0.8rem;color:var(--muted)">seconds remaining</p>
+
+      <hr class="divider">
+
+      <div style="background:rgba(255,71,87,0.07);border:1px solid rgba(255,71,87,0.2);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.5rem">
+        <p style="font-size:0.8rem;color:var(--muted);line-height:1.7">
+          🔴 <strong style="color:var(--red)">Why was I blocked?</strong><br>
+          The system detected one of the following:<br>
+          • 5+ consecutive failed login attempts<br>
+          • High risk score (≥ 5) from the ML engine<br>
+          • Rapid automated login attempts detected
+        </p>
+      </div>
+
+      <a href="/logout" class="btn btn-ghost" style="display:flex;text-decoration:none;justify-content:center">
+        ← Return to Login
+      </a>
+
+      <p style="text-align:center;margin-top:1rem;font-size:0.78rem;color:var(--muted)">
+        <a href="/logs" class="link">📋 View Attack Logs</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  let remaining = {{ remaining }};
+  const el = document.getElementById('timer');
+  const interval = setInterval(() => {
+    remaining--;
+    el.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      el.textContent = '0';
+      el.style.color = 'var(--green)';
+      setTimeout(() => { window.location.href = '/logout'; }, 800);
+    }
+  }, 1000);
+</script>
+</body>
+</html>
