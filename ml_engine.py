@@ -35,9 +35,12 @@ def train_model():
     X, y = _generate_training_data()
     model = DecisionTreeClassifier(max_depth=8, random_state=42)
     model.fit(X, y)
-    with open(MODEL_PATH, "wb") as f:
-        pickle.dump(model, f)
-    print("[ML Engine] Decision Tree trained and saved.")
+    try:
+        with open(MODEL_PATH, "wb") as f:
+            pickle.dump(model, f)
+        print("[ML Engine] Decision Tree trained and saved.")
+    except Exception as e:
+        print(f"[ML Engine] Warning: Could not save model to {MODEL_PATH}: {e}")
     return model
 
 def load_model():

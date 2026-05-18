@@ -6,9 +6,24 @@ from ml_engine import predict_risk
 app = Flask(__name__)
 app.secret_key = "cs-project-demo-key-2026"
 
-USERS_FILE    = "users.json"
-OTP_FILE      = "otp_store.json"
-LOG_FILE      = "login_log.json"
+import shutil
+
+def get_file_path(filename):
+    if os.environ.get("VERCEL") == "1":
+        tmp_path = os.path.join("/tmp", filename)
+        if filename == "users.json" and not os.path.exists(tmp_path):
+            original = os.path.join(os.path.dirname(__file__), filename)
+            if os.path.exists(original):
+                try:
+                    shutil.copy(original, tmp_path)
+                except Exception:
+                    pass
+        return tmp_path
+    return filename
+
+USERS_FILE    = get_file_path("users.json")
+OTP_FILE      = get_file_path("otp_store.json")
+LOG_FILE      = get_file_path("login_log.json")
 BLOCK_THRESHOLD = 5
 BLOCK_DURATION  = 60   # seconds
 
