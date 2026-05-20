@@ -44,11 +44,18 @@ def save_json(path, data):
 def generate_otp():
     return str(random.randint(100000, 999999))
 
-def is_unusual_hour():
-    h = datetime.now().hour
+def is_unusual_hour(client_hour=None):
+    if client_hour is not None:
+        try:
+            h = int(client_hour)
+        except (TypeError, ValueError):
+            h = datetime.now().hour
+    else:
+        h = datetime.now().hour
     unusual = 1 if h < 5 else 0
     print(f"[DEBUG CLOCK] Checked hour: {h} | Unusual hour flag: {unusual}")
     return unusual
+
 
 def init_tracker(username):
     if username not in login_tracker:
@@ -58,14 +65,14 @@ def init_tracker(username):
             "blocked_until": 0,
         }
 
-def extract_features(username, device_id, password_correct):
+def extract_features(username, device_id, password_correct, client_hour=None):
     init_tracker(username)
     t = login_tracker[username]
     now = time.time()
     users = load_json(USERS_FILE, {})
 
     short_interval  = 1 if (now - t["last_attempt_time"]) < 5 else 0
-    unusual_hour    = is_unusual_hour()
+    unusual_hour    = is_unusual_hour(client_hour)
     known = users.get(username, {}).get("known_device")
     unknown_device  = 0 if (known and device_id == known) else 1
 
@@ -100,6 +107,7 @@ def login():
         username  = request.form.get("username", "").strip()
         password  = request.form.get("password", "")
         device_id = request.form.get("device_id", "unknown")
+        client_hour = request.form.get("client_hour")
         ip        = request.remote_addr
 
         users = load_json(USERS_FILE, {})
@@ -117,7 +125,7 @@ def login():
         if user_data:
             password_correct = verify_password(user_data.get("password", ""), password)
 
-        features = extract_features(username, device_id, password_correct)
+        features = extract_features(username, device_id, password_correct, client_hour)
         risk_int, confidence, risk_level, rule_score = predict_risk(features)
 
         # ── wrong password ──

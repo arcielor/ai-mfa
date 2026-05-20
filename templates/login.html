@@ -67,6 +67,7 @@
       {% endwith %}
 
       <form method="POST" action="/">
+        <input type="hidden" id="client_hour" name="client_hour">
         <div class="mb-5">
           <label for="username" class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Username</label>
           <div class="relative">
@@ -157,6 +158,7 @@
     return 'dev-' + Math.abs(h).toString(36).slice(0,8);
   }
   document.getElementById('device_id').value = fingerprint();
+  document.getElementById('client_hour').value = new Date().getHours();
 
   function togglePwd() {
     const p = document.getElementById('password');
