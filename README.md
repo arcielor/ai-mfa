@@ -1,102 +1,42 @@
-# SecureAuth: AI/ML-Enhanced MFA System
+# AI/ML-Enhanced Multi-Factor Authentication (MFA)
 
-**SecureAuth** is a working prototype of an AI/ML-Enhanced Multi-Factor Authentication (MFA) system designed to mitigate password guessing attacks (brute-force, dictionary, and credential stuffing). This project was developed as part of a Computer Security assignment.
-
-The system uses a defense-in-depth architecture, combining traditional password authentication with real-time behavioral risk scoring (powered by a Machine Learning Decision Tree) and One-Time Password (OTP) verification.
+This repository contains a secure authentication prototype that integrates **Machine Learning (ML) behavioral scoring** with **Multi-Factor Authentication (MFA)** to detect and mitigate password guessing attacks in real-time.
 
 ---
 
-## 🚀 Features
+## 🧠 What ML is Used?
 
-*   **Adaptive Risk Scoring:** A scikit-learn Decision Tree classifier evaluates 5 behavioral features in real-time (`failed_attempts`, `short_interval`, `unknown_device`, `unusual_hour`, `password_match`) to assign a risk level (LOW, MEDIUM, HIGH) to every login attempt.
-*   **Tiered Mitigation:**
-    *   **Low Risk:** Standard OTP verification.
-    *   **Medium Risk:** Enforced 3-second delay + OTP verification.
-    *   **High Risk / Threshold Exceeded:** Immediate 60-second account block.
-*   **Brute-Force Protection:** Automatically locks an account after 5 consecutive failed attempts.
-*   **Device Fingerprinting:** Simulates checking for unknown devices based on browser environment.
-*   **Comprehensive Audit Logging:** Tracks all login attempts, including IP, device, risk score, ML confidence, and the final outcome (Access Granted, Blocked, etc.) in a dedicated Logs Dashboard.
-*   **Modern Cybersecurity UI:** A fully responsive, glassmorphism-styled dark theme UI.
+The system uses a **Decision Tree Classifier** (implemented via `scikit-learn` in [ml_engine.py](file:///d:/UNIMAS/UNI%20SEM%208/CS/vercel/ml_engine.py)) to evaluate login threats.
 
----
+### 📊 Input Features
+The ML engine evaluates **5 behavioral features** for every login attempt:
+1. **`failed_attempts`**: The number of consecutive failed login attempts for the username.
+2. **`short_interval`** (Binary: `0` or `1`): Detects if the login attempt occurred within 5 seconds of the previous attempt (indicates automated scripting).
+3. **`unknown_device`** (Binary: `0` or `1`): Detects if the provided `device_id` does not match the user's pre-registered `known_device` in `users.json`.
+4. **`unusual_hour`** (Binary: `0` or `1`): Detects if the login attempt is happening during off-peak/night hours (between 12 AM and 5 AM).
+5. **`password_match`** (Binary: `0` or `1`): Detects whether the entered password is correct.
 
-## 🛠️ Technology Stack
-
-*   **Backend:** Python 3, Flask
-*   **Machine Learning:** scikit-learn, NumPy
-*   **Security:** bcrypt (for password hashing support, though demo uses plaintext matching with tags for ease of testing)
-*   **Frontend:** HTML5, Vanilla CSS3 (Custom design, no external UI frameworks)
+### 🛡️ Threat & Mitigation Response
+Based on the threat features, the ML model classifies the login attempt into one of three risk levels:
+*   **🟢 LOW RISK**: The user proceeds to standard MFA (OTP) verification immediately.
+*   **🟡 MEDIUM RISK**: The system enforces a **3-second delay** (to slow down automated dictionary attacks) before presenting the MFA prompt.
+*   **🔴 HIGH RISK**: The attempt is immediately blocked, and the account is locked for **60 seconds** to mitigate active attacks.
 
 ---
 
-## 📥 Installation & Setup
+## 🔑 What MFA is Used?
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/arcielor/ai-mfa.git
-   cd ai-mfa
-   ```
-
-2. **Run the setup script (Windows):**
-   Simply double-click the `run.bat` file. It will automatically install the necessary Python dependencies and start the Flask server.
-
-   **OR manually install via command line:**
-   ```bash
-   pip install -r requirements.txt
-   python app.py
-   ```
-
-3. **Access the application:**
-   Open your web browser and navigate to:
-   [http://127.0.0.1:5000](http://127.0.0.1:5000)
+The Multi-Factor Authentication layer uses a dynamic **One-Time Password (OTP)** mechanism:
+*   **Generation**: The system generates a random 6-digit numeric code on successful password verification (shown on the MFA screen for demo purposes).
+*   **Expiry**: The OTP is valid for **300 seconds** (5 minutes). Once verified, the session is authenticated.
+*   **Verification**: Implemented dynamically in [app.py](file:///d:/UNIMAS/UNI%20SEM%208/CS/vercel/app.py) via `/otp`.
 
 ---
 
-## 🧪 How to Test the Prototype
+## 🧪 Test Accounts (`users.json`)
 
-The login page includes a built-in **"Test Credentials"** panel to easily test different scenarios:
+You can test the system manually using these credentials:
+*   **User 1**: `stud1` / Password: `stud123` / Known Device: `device-01`
+*   **User 2**: `stud2` / Password: `stud234` / Known Device: `device-02`
 
-1. **Normal Login (Low Risk):**
-   * Use **alice** / `Password123!`
-   * Copy the demo OTP provided on the next page and verify.
-2. **Behavioral Anomaly (Medium Risk):**
-   * Use **bob** / `SecurePass456!`
-   * Bob expects a specific device, so your browser will trigger an "Unknown Device" flag, elevating the risk score.
-3. **Brute-Force Attack (High Risk):**
-   * Use any username (e.g., **admin**) and enter an incorrect password 5 times in a row.
-   * On the 5th attempt, the ML engine will classify the risk as HIGH and lock you out for 60 seconds.
-4. **View Audit Logs:**
-   * After testing, click **"View Attack Logs"** to see a full breakdown of your actions, the exact ML confidence scores, and which rules were triggered.
-
----
-
-## 📁 Project Structure
-
-```text
-ai-mfa/
-│
-├── app.py                 # Main Flask application and routing logic
-├── ml_engine.py           # Machine learning module (Decision Tree training/inference)
-├── requirements.txt       # Python dependencies
-├── run.bat                # Windows launcher script
-│
-├── data/
-│   ├── users.json         # User credential store
-│   ├── otp_store.json     # Temporary OTP storage
-│   └── login_log.json     # Audit trail database
-│
-├── static/
-│   └── style.css          # Core stylesheet (Glassmorphism UI)
-│
-└── templates/             # HTML Templates
-    ├── login.html
-    ├── otp.html
-    ├── blocked.html
-    ├── success.html
-    └── logs.html
-```
-
----
-
-## ⚠️ Disclaimer
-*This project is a functional prototype built for educational purposes to demonstrate the concept of ML-enhanced MFA. While it incorporates real ML models and behavioral logic, it is not intended for deployment in production environments without further hardening (e.g., database integration, proper session management, HTTPS enforcement, and real OTP delivery mechanisms).*
+*Tip: Type a different Device ID (e.g. `device-xyz`) to trigger the "Unknown Device" anomaly and observe the elevated ML risk assessment.*
