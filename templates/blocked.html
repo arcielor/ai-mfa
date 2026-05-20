@@ -5,26 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SecureAuth — Access Blocked</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cyan: '#00d4ff',
+              purple: '#7c3aed',
+              green: '#00ff88',
+              red: '#ff4757',
+              yellow: '#fbbf24',
+              bg: '#080d1a',
+              bg2: '#0d1428',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
-<div class="page">
-  <div style="max-width:460px;width:100%">
-    <div class="card blocked-card">
-      <div class="blocked-icon">🚫</div>
-      <h2 style="text-align:center;color:var(--red);margin-bottom:0.5rem">Access Temporarily Blocked</h2>
-      <p style="text-align:center;color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem">
-        Suspicious login behaviour detected for <strong style="color:var(--text)">{{ username }}</strong>.
+<body class="font-sans antialiased text-slate-200">
+<!-- ── Live Date Time Badge ── -->
+<div class="absolute top-6 left-1/2 -translate-x-1/2 z-50">
+  <div class="bg-brand-bg2/60 border border-brand-cyan/20 px-4 py-2 rounded-full backdrop-blur-md shadow-lg text-[11px] font-mono tracking-wider text-slate-300 whitespace-nowrap flex items-center gap-2">
+    <span class="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse-bar"></span>
+    <span id="live-clock">Loading time...</span>
+  </div>
+</div>
+
+<div class="relative z-10 min-h-screen flex items-center justify-center py-8 px-4">
+  <div class="max-w-[460px] w-full">
+    <div class="bg-brand-bg2/85 border border-brand-red/30 rounded-[20px] p-8 lg:p-10 backdrop-blur-3xl shadow-[0_0_40px_rgba(255,71,87,0.1),0_24px_64px_rgba(0,0,0,0.5)] w-full">
+      <div class="text-6xl text-center mb-4 animate-shake">🚫</div>
+      <h2 class="text-center text-brand-red text-xl font-bold mb-2">Access Temporarily Blocked</h2>
+      <p class="text-center text-slate-400 text-sm mb-6 leading-relaxed">
+        Suspicious login behaviour detected for <strong class="text-white">{{ username }}</strong>.<br>
         The AI/ML risk engine has triggered a temporary block.
       </p>
 
-      <div class="countdown" id="timer">{{ remaining }}</div>
-      <p style="text-align:center;font-size:0.8rem;color:var(--muted)">seconds remaining</p>
+      <div class="text-5xl font-bold font-mono text-brand-red text-center my-4 drop-shadow-[0_0_30px_rgba(255,71,87,0.5)]" id="timer">{{ remaining }}</div>
+      <p class="text-center text-xs text-slate-400 uppercase tracking-wider mb-6">seconds remaining</p>
 
-      <hr class="divider">
+      <hr class="border-0 border-t border-white/10 my-6">
 
-      <div style="background:rgba(255,71,87,0.07);border:1px solid rgba(255,71,87,0.2);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.5rem">
-        <p style="font-size:0.8rem;color:var(--muted);line-height:1.7">
-          🔴 <strong style="color:var(--red)">Why was I blocked?</strong><br>
+      <div class="bg-brand-red/5 border border-brand-red/20 rounded-xl p-4 mb-6">
+        <p class="text-xs text-slate-400 leading-relaxed">
+          🔴 <strong class="text-brand-red">Why was I blocked?</strong><br>
           The system detected one of the following:<br>
           • 5+ consecutive failed login attempts<br>
           • High risk score (≥ 5) from the ML engine<br>
@@ -32,18 +64,34 @@
         </p>
       </div>
 
-      <a href="/logout" class="btn btn-ghost" style="display:flex;text-decoration:none;justify-content:center">
+      <a href="/logout" class="w-full p-3.5 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center gap-2 cursor-pointer bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10 hover:text-white no-underline">
         ← Return to Login
       </a>
 
-      <p style="text-align:center;margin-top:1rem;font-size:0.78rem;color:var(--muted)">
-        <a href="/logs" class="link">📋 View Attack Logs</a>
+      <p class="text-center mt-5 text-xs">
+        <a href="/logs" class="text-brand-cyan hover:underline">📋 View Attack Logs</a>
       </p>
     </div>
   </div>
 </div>
 
 <script>
+  // ── Live Date Time Badge ──
+  function updateClock() {
+    const clockEl = document.getElementById('live-clock');
+    if (!clockEl) return;
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    clockEl.textContent = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
   let remaining = {{ remaining }};
   const el = document.getElementById('timer');
   const interval = setInterval(() => {
@@ -52,7 +100,8 @@
     if (remaining <= 0) {
       clearInterval(interval);
       el.textContent = '0';
-      el.style.color = 'var(--green)';
+      el.style.color = '#00ff88'; // var(--green)
+      el.style.textShadow = '0 0 30px rgba(0,255,136,0.5)';
       setTimeout(() => { window.location.href = '/logout'; }, 800);
     }
   }, 1000);

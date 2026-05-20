@@ -5,145 +5,148 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SecureAuth — AI/ML-Enhanced MFA Login</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cyan: '#00d4ff',
+              purple: '#7c3aed',
+              green: '#00ff88',
+              red: '#ff4757',
+              yellow: '#fbbf24',
+              bg: '#080d1a',
+              bg2: '#0d1428',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
-<div class="page">
-  <div class="split">
+<body class="font-sans antialiased text-slate-200">
+<!-- ── Live Date Time Badge ── -->
+<div class="absolute top-6 left-1/2 -translate-x-1/2 z-50">
+  <div class="bg-brand-bg2/60 border border-brand-cyan/20 px-4 py-2 rounded-full backdrop-blur-md shadow-lg text-[11px] font-mono tracking-wider text-slate-300 whitespace-nowrap flex items-center gap-2">
+    <span class="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse-bar"></span>
+    <span id="live-clock">Loading time...</span>
+  </div>
+</div>
+
+<div class="relative z-10 min-h-screen flex items-center justify-center py-8 px-4">
+  <div class="w-full max-w-[440px]">
 
     <!-- ── Main Card ── -->
-    <div class="card card-main">
-      <div class="logo">
-        <div class="logo-icon">🛡️</div>
+    <div class="w-full bg-brand-bg2/85 border border-brand-cyan/15 rounded-[20px] p-8 lg:p-10 backdrop-blur-3xl shadow-[0_0_60px_rgba(0,212,255,0.06),0_24px_64px_rgba(0,0,0,0.5)]">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-cyan/10 to-brand-purple/25 border border-brand-cyan/15 grid place-items-center text-2xl">🛡️</div>
         <div>
-          <h1>SecureAuth</h1>
-          <span>AI/ML-Enhanced MFA System</span>
+          <h1 class="text-xl font-bold tracking-tight text-white leading-none">SecureAuth</h1>
+          <span class="block text-[11px] text-slate-400 mt-1.5 uppercase tracking-wider">AI/ML-Enhanced MFA System</span>
         </div>
       </div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for cat, msg in messages %}
-            <div class="alert alert-{{ cat }}">⚠️ {{ msg }}</div>
+            {% if cat == 'error' or cat == 'danger' %}
+              <div class="p-3.5 rounded-xl text-xs mb-5 flex items-center gap-2.5 bg-brand-red/10 border border-brand-red/30 text-rose-400">⚠️ {{ msg }}</div>
+            {% elif cat == 'success' %}
+              <div class="p-3.5 rounded-xl text-xs mb-5 flex items-center gap-2.5 bg-brand-green/10 border border-brand-green/25 text-emerald-400">⚠️ {{ msg }}</div>
+            {% else %}
+              <div class="p-3.5 rounded-xl text-xs mb-5 flex items-center gap-2.5 bg-brand-cyan/8 border border-brand-cyan/20 text-brand-cyan">⚠️ {{ msg }}</div>
+            {% endif %}
           {% endfor %}
         {% endif %}
       {% endwith %}
 
       <form method="POST" action="/">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <div class="inp-wrap">
-            <input type="text" id="username" name="username" placeholder="Enter username" required autocomplete="username">
+        <div class="mb-5">
+          <label for="username" class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Username</label>
+          <div class="relative">
+            <input type="text" id="username" name="username" placeholder="Enter username" required autocomplete="username" class="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 outline-none transition duration-200 focus:border-brand-cyan focus:ring-4 focus:ring-brand-cyan/10">
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <div class="inp-wrap">
-            <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="current-password">
-            <button type="button" class="eye-btn" onclick="togglePwd()" title="Show/hide">👁</button>
+        <div class="mb-5">
+          <label for="password" class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
+          <div class="relative">
+            <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="current-password" class="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 outline-none transition duration-200 focus:border-brand-cyan focus:ring-4 focus:ring-brand-cyan/10">
+            <button type="button" class="absolute right-3.5 top-1/2 -translate-y-1/2 bg-transparent border-none text-slate-400 cursor-pointer text-base leading-none hover:text-white transition" onclick="togglePwd()" title="Show/hide">👁</button>
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="device_id">Device ID <span class="badge">Auto-detected</span></label>
-          <div class="inp-wrap">
-            <input type="text" id="device_id" name="device_id" class="mono" readonly>
+        <div class="mb-5">
+          <label for="device_id" class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+            Device ID <span class="text-[10px] bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 rounded px-1.5 py-0.5 ml-1.5 normal-case tracking-normal">Auto-detected</span>
+          </label>
+          <div class="relative">
+            <input type="text" id="device_id" name="device_id" readonly class="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 outline-none transition duration-200 focus:border-brand-cyan focus:ring-4 focus:ring-brand-cyan/10 font-mono text-xs text-brand-cyan">
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="margin-top:0.5rem">
+        <button type="submit" class="w-full p-3.5 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-blue-600 to-brand-cyan text-white shadow-[0_4px_20px_rgba(0,150,255,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_28px_rgba(0,150,255,0.45)] active:translate-y-0 mt-2">
           🔐 Authenticate
         </button>
       </form>
 
-      <hr class="divider">
+      <hr class="border-0 border-t border-white/10 my-6">
 
       <!-- Demo credentials -->
-      <div class="demo-panel">
-        <button class="demo-toggle" onclick="toggleDemo(this)">🧪 Test Credentials (click to expand)</button>
-        <div id="demo-creds" class="demo-creds hidden">
-          <div class="cred-card" onclick="fill('alice','Password123!')">
-            <span class="cred-name">alice</span>
-            <span class="cred-pass">Password123!</span>
-            <span class="cred-tag tag-new">First Login</span>
+      <div class="mt-7">
+        <button class="w-full bg-white/5 border border-dashed border-white/15 text-slate-400 rounded-lg py-2 px-3.5 cursor-pointer text-xs transition hover:bg-white/10 hover:text-white" onclick="toggleDemo(this)">🧪 Test Credentials (click to expand)</button>
+        <div id="demo-creds" class="mt-2.5 flex flex-col gap-2 hidden">
+          <div class="flex items-center gap-2.5 bg-white/5 border border-white/5 rounded-lg py-2 px-3.5 cursor-pointer transition hover:bg-brand-cyan/5 hover:border-brand-cyan/20" onclick="fill('alice','Password123!')">
+            <span class="font-semibold text-xs text-white w-12">alice</span>
+            <span class="font-mono text-[11px] text-slate-400 flex-1">Password123!</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider bg-brand-green/10 text-brand-green border border-brand-green/20">First Login</span>
           </div>
-          <div class="cred-card" onclick="fill('bob','SecurePass456!')">
-            <span class="cred-name">bob</span>
-            <span class="cred-pass">SecurePass456!</span>
-            <span class="cred-tag tag-unknown">Unknown Device</span>
+          <div class="flex items-center gap-2.5 bg-white/5 border border-white/5 rounded-lg py-2 px-3.5 cursor-pointer transition hover:bg-brand-cyan/5 hover:border-brand-cyan/20" onclick="fill('bob','SecurePass456!')">
+            <span class="font-semibold text-xs text-white w-12">bob</span>
+            <span class="font-mono text-[11px] text-slate-400 flex-1">SecurePass456!</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider bg-brand-red/10 text-brand-red border border-brand-red/20">Unknown Dev</span>
           </div>
-          <div class="cred-card" onclick="fill('admin','AdminSecure789!')">
-            <span class="cred-name">admin</span>
-            <span class="cred-pass">AdminSecure789!</span>
-            <span class="cred-tag tag-admin">Admin</span>
+          <div class="flex items-center gap-2.5 bg-white/5 border border-white/5 rounded-lg py-2 px-3.5 cursor-pointer transition hover:bg-brand-cyan/5 hover:border-brand-cyan/20" onclick="fill('admin','AdminSecure789!')">
+            <span class="font-semibold text-xs text-white w-12">admin</span>
+            <span class="font-mono text-[11px] text-slate-400 flex-1">AdminSecure789!</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider bg-brand-purple/15 text-violet-300 border border-brand-purple/20">Admin</span>
           </div>
-          <p style="font-size:0.75rem;color:var(--muted);margin-top:6px">
+          <p class="text-[11px] text-slate-400 mt-1.5 text-center">
             💡 Try 5 wrong passwords to trigger brute-force blocking.
           </p>
         </div>
       </div>
 
-      <p style="text-align:center;margin-top:1.5rem;font-size:0.8rem;color:var(--muted)">
-        <a class="link" href="/logs">📋 View Attack Logs</a>
+      <p class="text-center mt-6 text-xs">
+        <a class="text-brand-cyan hover:underline flex items-center justify-center gap-1" href="/logs">📋 View Attack Logs</a>
       </p>
     </div>
-
-    <!-- ── Side Info Card ── -->
-    <div class="card card-side">
-      <p style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:1rem">
-        🤖 AI/ML Detection Features
-      </p>
-      <ul class="feat-list">
-        <li class="feat-item">
-          <span class="feat-icon">🔢</span>
-          <div><strong>Failed Attempts</strong><p>Score +2 after 3 consecutive failures</p></div>
-        </li>
-        <li class="feat-item">
-          <span class="feat-icon">⚡</span>
-          <div><strong>Rapid Attempts</strong><p>Score +2 if attempts &lt; 5s apart</p></div>
-        </li>
-        <li class="feat-item">
-          <span class="feat-icon">💻</span>
-          <div><strong>Unknown Device</strong><p>Score +1 for unrecognised device</p></div>
-        </li>
-        <li class="feat-item">
-          <span class="feat-icon">🌙</span>
-          <div><strong>Unusual Hour</strong><p>Score +1 for logins between 12–5 AM</p></div>
-        </li>
-        <li class="feat-item">
-          <span class="feat-icon">❌</span>
-          <div><strong>Wrong Password</strong><p>Score +2 per failed credential</p></div>
-        </li>
-      </ul>
-
-      <hr class="divider">
-
-      <div class="score-grid">
-        <div class="score-item">
-          <div class="si-label">LOW RISK</div>
-          <div class="si-val green">Score &lt; 3</div>
-        </div>
-        <div class="score-item">
-          <div class="si-label">MEDIUM RISK</div>
-          <div class="si-val yellow">Score 3–4</div>
-        </div>
-        <div class="score-item" style="grid-column:span 2">
-          <div class="si-label">HIGH RISK — Blocked</div>
-          <div class="si-val red">Score ≥ 5</div>
-        </div>
-      </div>
-
-      <hr class="divider">
-      <p style="font-size:0.75rem;color:var(--muted);line-height:1.6">
-        🧠 Powered by a <strong>Decision Tree</strong> classifier trained on
-        3,000 synthetic login events with 5 behavioral features.
-      </p>
-    </div>
-
   </div>
 </div>
 
 <script>
+  // ── Live Date Time Badge ──
+  function updateClock() {
+    const clockEl = document.getElementById('live-clock');
+    if (!clockEl) return;
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    clockEl.textContent = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
   // ── Device fingerprint ──
   function fingerprint() {
     const raw = [navigator.userAgent, screen.width+'x'+screen.height,

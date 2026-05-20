@@ -5,52 +5,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SecureAuth — Login Successful</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cyan: '#00d4ff',
+              purple: '#7c3aed',
+              green: '#00ff88',
+              red: '#ff4757',
+              yellow: '#fbbf24',
+              bg: '#080d1a',
+              bg2: '#0d1428',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
-<div class="page">
-  <div class="split">
+<body class="font-sans antialiased text-slate-200">
+<!-- ── Live Date Time Badge ── -->
+<div class="absolute top-6 left-1/2 -translate-x-1/2 z-50">
+  <div class="bg-brand-bg2/60 border border-brand-cyan/20 px-4 py-2 rounded-full backdrop-blur-md shadow-lg text-[11px] font-mono tracking-wider text-slate-300 whitespace-nowrap flex items-center gap-2">
+    <span class="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse-bar"></span>
+    <span id="live-clock">Loading time...</span>
+  </div>
+</div>
 
-    <div class="card success-card card-main">
-      <div class="success-icon">✅</div>
-      <h2 style="text-align:center;color:var(--green);margin-bottom:0.5rem">Authentication Successful</h2>
-      <p style="text-align:center;color:var(--muted);font-size:0.88rem;margin-bottom:1.8rem">
-        Welcome back, <strong style="color:var(--text)">{{ username }}</strong>. Both factors verified.
+<div class="relative z-10 min-h-screen flex items-center justify-center py-8 px-4">
+  <div class="w-full max-w-[440px]">
+
+    <!-- ── Main Card ── -->
+    <div class="w-full bg-brand-bg2/85 border border-brand-green/20 rounded-[20px] p-8 lg:p-10 backdrop-blur-3xl shadow-[0_0_40px_rgba(0,255,136,0.07),0_24px_64px_rgba(0,0,0,0.5)]">
+      <div class="text-6xl text-center mb-4 animate-pop">✅</div>
+      <h2 class="text-center text-brand-green text-xl font-bold mb-2">Authentication Successful</h2>
+      <p class="text-center text-slate-400 text-sm mb-5">
+        Welcome back, <strong class="text-white">{{ username }}</strong>. Both factors verified.
       </p>
 
       <!-- Risk summary -->
-      <div style="display:flex;justify-content:center;margin-bottom:1.8rem">
-        <span class="risk-pill risk-{{ risk_level }}">
+      <div class="flex justify-center mb-5">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider
+          {% if risk_level=='low' %}bg-brand-green/10 text-brand-green border border-brand-green/30
+          {% elif risk_level=='medium' %}bg-brand-yellow/10 text-brand-yellow border border-brand-yellow/30
+          {% else %}bg-brand-red/15 text-brand-red border border-brand-red/35{% endif %}">
           {% if risk_level=='low' %}🟢{% elif risk_level=='medium' %}🟡{% else %}🔴{% endif %}
           Session Risk: {{ risk_level|upper }}
         </span>
       </div>
 
-      <div class="score-grid">
-        <div class="score-item">
-          <div class="si-label">Rule Score</div>
-          <div class="si-val {% if rule_score < 3 %}green{% elif rule_score < 5 %}yellow{% else %}red{% endif %}">
+      <div class="grid grid-cols-2 gap-3 my-5">
+        <div class="bg-white/4 border border-white/5 rounded-xl p-3">
+          <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Rule Score</div>
+          <div class="text-base lg:text-lg font-bold font-mono {% if rule_score < 3 %}text-brand-green{% elif rule_score < 5 %}text-brand-yellow{% else %}text-brand-red{% endif %}">
             {{ rule_score }} / 8
           </div>
         </div>
-        <div class="score-item">
-          <div class="si-label">ML Confidence</div>
-          <div class="si-val cyan">{{ confidence }}%</div>
+        <div class="bg-white/4 border border-white/5 rounded-xl p-3">
+          <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">ML Confidence</div>
+          <div class="text-base lg:text-lg font-bold font-mono text-brand-cyan">{{ confidence }}%</div>
         </div>
-        <div class="score-item">
-          <div class="si-label">Auth Method</div>
-          <div class="si-val green" style="font-size:0.85rem">Password + OTP</div>
+        <div class="bg-white/4 border border-white/5 rounded-xl p-3">
+          <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Auth Method</div>
+          <div class="text-xs font-bold font-mono text-brand-green">Password + OTP</div>
         </div>
-        <div class="score-item">
-          <div class="si-label">MFA Status</div>
-          <div class="si-val green" style="font-size:0.85rem">Verified ✓</div>
+        <div class="bg-white/4 border border-white/5 rounded-xl p-3">
+          <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">MFA Status</div>
+          <div class="text-xs font-bold font-mono text-brand-green">Verified ✓</div>
         </div>
       </div>
 
-      <hr class="divider">
+      <hr class="border-0 border-t border-white/10 my-6">
 
-      <div style="background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.5rem">
-        <p style="font-size:0.82rem;color:var(--muted);line-height:1.7">
-          🛡️ <strong style="color:var(--green)">How the system protected you:</strong><br>
+      <div class="bg-brand-green/5 border border-brand-green/15 rounded-xl p-4 mb-6">
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          🛡️ <strong class="text-brand-green">How the system protected you:</strong><br>
           ✔ Password was verified against the credential store<br>
           ✔ 5 behavioral features were extracted and scored<br>
           ✔ Decision Tree ML model classified the risk level<br>
@@ -59,45 +95,33 @@
         </p>
       </div>
 
-      <div style="display:flex;gap:10px">
-        <a href="/logs" class="btn btn-ghost" style="text-decoration:none;flex:1;justify-content:center;display:flex">
+      <div class="flex gap-3">
+        <a href="/logs" class="flex-1 p-3 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center gap-2 cursor-pointer bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10 hover:text-white no-underline">
           📋 Attack Logs
         </a>
-        <a href="/logout" class="btn btn-primary" style="text-decoration:none;flex:1;justify-content:center;display:flex">
+        <a href="/logout" class="flex-1 p-3 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-blue-600 to-brand-cyan text-white shadow-[0_4px_20px_rgba(0,150,255,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_28px_rgba(0,150,255,0.45)] active:translate-y-0 no-underline">
           🔒 Logout
         </a>
       </div>
     </div>
-
-    <div class="card card-side">
-      <p style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:1rem">
-        📊 Session Security Summary
-      </p>
-      <ul class="feat-list">
-        <li class="feat-item">
-          <span class="feat-icon">🔐</span>
-          <div><strong>Multi-Factor Authentication</strong>
-            <p>Two independent factors verified: knowledge (password) + possession (OTP).</p></div>
-        </li>
-        <li class="feat-item">
-          <span class="feat-icon">🧠</span>
-          <div><strong>AI/ML Risk Engine</strong>
-            <p>Decision Tree classifier evaluated 5 behavioral features in real-time.</p></div>
-        </li>
-        <li class="feat-item">
-          <span class="feat-icon">🚫</span>
-          <div><strong>Brute-Force Protection</strong>
-            <p>Account locks after {{ 5 }} failed attempts for 60 seconds.</p></div>
-        </li>
-        <li class="feat-item">
-          <span class="feat-icon">📋</span>
-          <div><strong>Audit Logging</strong>
-            <p>All login events (successful and failed) are logged with risk scores.</p></div>
-        </li>
-      </ul>
-    </div>
-
   </div>
 </div>
+<script>
+  // ── Live Date Time Badge ──
+  function updateClock() {
+    const clockEl = document.getElementById('live-clock');
+    if (!clockEl) return;
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    clockEl.textContent = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
 </body>
 </html>

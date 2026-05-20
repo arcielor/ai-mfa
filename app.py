@@ -45,7 +45,10 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 def is_unusual_hour():
-    return 1 if datetime.now().hour < 5 else 0
+    h = datetime.now().hour
+    unusual = 1 if h < 5 else 0
+    print(f"[DEBUG CLOCK] Checked hour: {h} | Unusual hour flag: {unusual}")
+    return unusual
 
 def init_tracker(username):
     if username not in login_tracker:

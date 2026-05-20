@@ -5,21 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SecureAuth — Attack Logs Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cyan: '#00d4ff',
+              purple: '#7c3aed',
+              green: '#00ff88',
+              red: '#ff4757',
+              yellow: '#fbbf24',
+              bg: '#080d1a',
+              bg2: '#0d1428',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
-<div class="logs-wrap">
+<body class="font-sans antialiased text-slate-200">
+<!-- ── Live Date Time Badge ── -->
+<div class="absolute top-6 left-1/2 -translate-x-1/2 z-50">
+  <div class="bg-brand-bg2/60 border border-brand-cyan/20 px-4 py-2 rounded-full backdrop-blur-md shadow-lg text-[11px] font-mono tracking-wider text-slate-300 whitespace-nowrap flex items-center gap-2">
+    <span class="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse-bar"></span>
+    <span id="live-clock">Loading time...</span>
+  </div>
+</div>
 
-  <div class="logs-header">
+<div class="relative z-10 max-w-[1100px] mx-auto py-8 px-6">
+
+  <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
     <div>
-      <h2>📋 Login Attempt Logs</h2>
-      <p style="font-size:0.82rem;color:var(--muted);margin-top:4px">
+      <h2 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">📋 Login Attempt Logs</h2>
+      <p class="text-xs text-slate-400 mt-1">
         Real-time audit trail — all login events with AI/ML risk scores
       </p>
     </div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <a href="/" class="btn btn-ghost" style="text-decoration:none;padding:8px 18px;width:auto">← Login</a>
+    <div class="flex gap-3 items-center">
+      <a href="/" class="px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10 hover:text-white no-underline">← Login</a>
       <form method="POST" action="/clear-logs" onsubmit="return confirm('Clear all logs?')">
-        <button type="submit" class="btn btn-danger" style="padding:8px 18px;width:auto">🗑 Clear Logs</button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 bg-gradient-to-r from-red-700 to-brand-red text-white shadow-lg cursor-pointer">🗑 Clear Logs</button>
       </form>
     </div>
   </div>
@@ -30,89 +62,90 @@
   {% set blocked_count = logs|selectattr('action','equalto','blocked')|list|length %}
   {% set high_risk = logs|selectattr('risk_level','equalto','high')|list|length %}
 
-  <div class="score-grid" style="max-width:600px;margin-bottom:1.5rem">
-    <div class="score-item">
-      <div class="si-label">Total Events</div>
-      <div class="si-val cyan">{{ total }}</div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-[800px] mb-6">
+    <div class="bg-white/4 border border-white/5 rounded-xl p-3.5">
+      <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Total Events</div>
+      <div class="text-xl font-bold font-mono text-brand-cyan">{{ total }}</div>
     </div>
-    <div class="score-item">
-      <div class="si-label">Access Granted</div>
-      <div class="si-val green">{{ granted }}</div>
+    <div class="bg-white/4 border border-white/5 rounded-xl p-3.5">
+      <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Access Granted</div>
+      <div class="text-xl font-bold font-mono text-brand-green">{{ granted }}</div>
     </div>
-    <div class="score-item">
-      <div class="si-label">Blocked</div>
-      <div class="si-val red">{{ blocked_count }}</div>
+    <div class="bg-white/4 border border-white/5 rounded-xl p-3.5">
+      <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Blocked</div>
+      <div class="text-xl font-bold font-mono text-brand-red">{{ blocked_count }}</div>
     </div>
-    <div class="score-item">
-      <div class="si-label">High-Risk Events</div>
-      <div class="si-val red">{{ high_risk }}</div>
+    <div class="bg-white/4 border border-white/5 rounded-xl p-3.5">
+      <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">High-Risk Events</div>
+      <div class="text-xl font-bold font-mono text-brand-red">{{ high_risk }}</div>
     </div>
   </div>
 
   {% if logs %}
-  <div class="card" style="padding:0;overflow:hidden">
-    <div style="overflow-x:auto">
-      <table>
+  <div class="bg-brand-bg2/85 border border-brand-cyan/15 rounded-[20px] p-0 overflow-hidden shadow-2xl">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-left text-xs">
         <thead>
-          <tr>
-            <th>#</th>
-            <th>Timestamp</th>
-            <th>User</th>
-            <th>IP</th>
-            <th>Risk Level</th>
-            <th>Score</th>
-            <th>ML Conf.</th>
-            <th>Failed Att.</th>
-            <th>Rapid</th>
-            <th>Unk. Device</th>
-            <th>Unusual Hr</th>
-            <th>Action</th>
-            <th>Outcome</th>
+          <tr class="bg-white/[0.03] border-b border-white/10">
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">#</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Timestamp</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">User</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">IP Address</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Risk Level</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Score</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">ML Conf.</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Failed Att.</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Rapid</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Unk. Device</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Unusual Hr</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Action</th>
+            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Outcome</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="divide-y divide-white/5">
           {% for log in logs %}
-          <tr>
-            <td style="color:var(--muted)">{{ log.id }}</td>
-            <td style="font-family:var(--mono);font-size:0.75rem;color:var(--muted)">{{ log.timestamp }}</td>
-            <td><strong>{{ log.username }}</strong></td>
-            <td style="font-family:var(--mono);font-size:0.75rem">{{ log.ip }}</td>
-            <td>
-              <span class="risk-pill risk-{{ log.risk_level }}" style="font-size:0.7rem;padding:2px 8px">
+          <tr class="hover:bg-white/[0.02] transition">
+            <td class="p-3.5 text-slate-500">{{ log.id }}</td>
+            <td class="p-3.5 font-mono text-[11px] text-slate-400 whitespace-nowrap">{{ log.timestamp }}</td>
+            <td class="p-3.5 text-white font-semibold">{{ log.username }}</td>
+            <td class="p-3.5 font-mono text-[11px] text-slate-300">{{ log.ip }}</td>
+            <td class="p-3.5">
+              <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider
+                {% if log.risk_level == 'low' %}bg-brand-green/10 text-brand-green border border-brand-green/30
+                {% elif log.risk_level == 'medium' %}bg-brand-yellow/10 text-brand-yellow border border-brand-yellow/30
+                {% else %}bg-brand-red/15 text-brand-red border border-brand-red/35{% endif %}">
                 {{ log.risk_level|upper }}
               </span>
             </td>
-            <td style="font-family:var(--mono);text-align:center">
-              <strong style="color:{% if log.rule_score >= 5 %}var(--red){% elif log.rule_score >= 3 %}var(--yellow){% else %}var(--green){% endif %}">
+            <td class="p-3.5 text-center font-mono font-bold">
+              <span class="{% if log.rule_score >= 5 %}text-brand-red{% elif log.rule_score >= 3 %}text-brand-yellow{% else %}text-brand-green{% endif %}">
                 {{ log.rule_score }}
-              </strong>
+              </span>
             </td>
-            <td style="font-family:var(--mono);font-size:0.82rem;color:var(--cyan)">
-              {{ log.ml_confidence }}%
-            </td>
-            <td style="text-align:center">
-              <span style="color:{% if log.failed_attempts >= 3 %}var(--red){% else %}var(--muted){% endif %}">
+            <td class="p-3.5 font-mono text-brand-cyan">{{ log.ml_confidence }}%</td>
+            <td class="p-3.5 text-center">
+              <span class="{% if log.failed_attempts >= 3 %}text-brand-red font-bold{% else %}text-slate-400{% endif %}">
                 {{ log.failed_attempts }}
               </span>
             </td>
-            <td style="text-align:center">{{ '⚡' if log.short_interval else '—' }}</td>
-            <td style="text-align:center">{{ '⚠️' if log.unknown_device else '✓' }}</td>
-            <td style="text-align:center">{{ '🌙' if log.unusual_hour else '—' }}</td>
-            <td style="font-size:0.78rem;color:var(--muted)">{{ log.action }}</td>
-            <td>
+            <td class="p-3.5 text-center text-sm">{{ '⚡' if log.short_interval else '—' }}</td>
+            <td class="p-3.5 text-center text-sm">{{ '⚠️' if log.unknown_device else '✓' }}</td>
+            <td class="p-3.5 text-center text-sm">{{ '🌙' if log.unusual_hour else '—' }}</td>
+            <td class="p-3.5 text-xs text-slate-400">{{ log.action }}</td>
+            <td class="p-3.5 whitespace-nowrap">
               {% set oc = log.outcome %}
               {% if oc == 'access_granted' %}
-                <span class="outcome-chip oc-granted">✅ Granted</span>
+                <span class="inline-block px-2.5 py-0.5 rounded font-semibold text-[10px] bg-brand-green/10 text-brand-green border border-brand-green/20">✅ Granted</span>
               {% elif oc == 'pending_mfa' %}
-                <span class="outcome-chip oc-pending">⏳ Pending MFA</span>
+                <span class="inline-block px-2.5 py-0.5 rounded font-semibold text-[10px] bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20">⏳ Pending MFA</span>
               {% elif oc == 'wrong_password' %}
-                <span class="outcome-chip oc-wrong">❌ Wrong Pwd</span>
+                <span class="inline-block px-2.5 py-0.5 rounded font-semibold text-[10px] bg-brand-red/10 text-brand-red border border-brand-red/20">❌ Wrong Pwd</span>
               {% elif oc == 'threshold_exceeded' or oc == 'high_risk' %}
-                <span class="outcome-chip oc-blocked">🚫 Blocked</span>
+                <span class="inline-block px-2.5 py-0.5 rounded font-bold text-[10px] bg-brand-red/20 text-brand-red border border-brand-red/30">🚫 Blocked</span>
               {% elif oc == 'wrong_otp' %}
-                <span class="outcome-chip oc-denied">🔑 Wrong OTP</span>
+                <span class="inline-block px-2.5 py-0.5 rounded font-semibold text-[10px] bg-brand-red/10 text-brand-red border border-brand-red/20">🔑 Wrong OTP</span>
               {% else %}
-                <span class="outcome-chip oc-denied">{{ oc }}</span>
+                <span class="inline-block px-2.5 py-0.5 rounded font-semibold text-[10px] bg-brand-red/10 text-brand-red border border-brand-red/20">{{ oc }}</span>
               {% endif %}
             </td>
           </tr>
@@ -122,12 +155,29 @@
     </div>
   </div>
   {% else %}
-  <div class="card" style="text-align:center;padding:3rem">
-    <p style="font-size:2rem;margin-bottom:1rem">📭</p>
-    <p style="color:var(--muted)">No login events recorded yet. <a href="/" class="link">Try logging in</a>.</p>
+  <div class="bg-brand-bg2/85 border border-brand-cyan/15 rounded-[20px] p-12 text-center shadow-2xl">
+    <p class="text-4xl mb-4">📭</p>
+    <p class="text-slate-400">No login events recorded yet. <a href="/" class="text-brand-cyan hover:underline font-semibold">Try logging in</a>.</p>
   </div>
   {% endif %}
 
 </div>
+<script>
+  // ── Live Date Time Badge ──
+  function updateClock() {
+    const clockEl = document.getElementById('live-clock');
+    if (!clockEl) return;
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    clockEl.textContent = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
 </body>
 </html>
