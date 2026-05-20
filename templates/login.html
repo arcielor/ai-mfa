@@ -101,64 +101,6 @@
         </button>
       </form>
 
-      <hr class="border-0 border-t border-white/10 my-6">
-
-      <!-- Demo credentials -->
-      <div class="mt-7">
-        <button class="w-full bg-white/5 border border-dashed border-white/15 text-slate-400 rounded-lg py-2 px-3.5 cursor-pointer text-xs transition hover:bg-white/10 hover:text-white" onclick="toggleDemo(this)">🧪 Test Credentials (click to expand)</button>
-        <div id="demo-creds" class="mt-2.5 flex flex-col gap-2.5 hidden">
-          <!-- Alice -->
-          <div class="bg-white/5 border border-white/5 rounded-xl p-3 flex flex-col gap-1.5 hover:border-brand-cyan/20 transition">
-            <div class="flex items-center justify-between">
-              <span class="font-semibold text-xs text-white">alice</span>
-              <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider bg-brand-green/10 text-brand-green border border-brand-green/20">Known Device Scenario</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-400 font-mono">
-              <div>PW: <span class="text-slate-200">Password123!</span></div>
-              <div>Device ID: <span class="text-brand-cyan font-bold">dev-r67dgv</span></div>
-            </div>
-            <div class="flex gap-2 mt-1">
-              <button type="button" class="flex-1 text-[10px] bg-brand-purple/20 hover:bg-brand-purple/35 text-violet-300 border border-brand-purple/30 rounded py-1 transition" onclick="fill('alice','Password123!')">Fill Credentials Only</button>
-              <button type="button" class="flex-1 text-[10px] bg-brand-cyan/15 hover:bg-brand-cyan/25 text-brand-cyan border border-brand-cyan/30 rounded py-1 transition" onclick="fill('alice','Password123!','dev-r67dgv')">Fill All (Auto)</button>
-            </div>
-          </div>
-
-          <!-- Bob -->
-          <div class="bg-white/5 border border-white/5 rounded-xl p-3 flex flex-col gap-1.5 hover:border-brand-cyan/20 transition">
-            <div class="flex items-center justify-between">
-              <span class="font-semibold text-xs text-white">bob</span>
-              <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider bg-brand-red/10 text-brand-red border border-brand-red/20">Unknown Device Scenario</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-400 font-mono">
-              <div>PW: <span class="text-slate-200">SecurePass456!</span></div>
-              <div>Device ID: <span class="text-brand-cyan font-bold">phone-02</span></div>
-            </div>
-            <div class="flex gap-2 mt-1">
-              <button type="button" class="flex-1 text-[10px] bg-brand-purple/20 hover:bg-brand-purple/35 text-violet-300 border border-brand-purple/30 rounded py-1 transition" onclick="fill('bob','SecurePass456!')">Fill Credentials Only</button>
-              <button type="button" class="flex-1 text-[10px] bg-brand-cyan/15 hover:bg-brand-cyan/25 text-brand-cyan border border-brand-cyan/30 rounded py-1 transition" onclick="fill('bob','SecurePass456!','phone-02')">Fill All (Auto)</button>
-            </div>
-          </div>
-
-          <!-- Admin -->
-          <div class="bg-white/5 border border-white/5 rounded-xl p-3 flex flex-col gap-1.5 hover:border-brand-cyan/20 transition">
-            <div class="flex items-center justify-between">
-              <span class="font-semibold text-xs text-white">admin</span>
-              <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider bg-brand-purple/15 text-violet-300 border border-brand-purple/20">Admin Workstation</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-400 font-mono">
-              <div>PW: <span class="text-slate-200">AdminSecure789!</span></div>
-              <div>Device ID: <span class="text-brand-cyan font-bold">admin-workstation</span></div>
-            </div>
-            <div class="flex gap-2 mt-1">
-              <button type="button" class="flex-1 text-[10px] bg-brand-purple/20 hover:bg-brand-purple/35 text-violet-300 border border-brand-purple/30 rounded py-1 transition" onclick="fill('admin','AdminSecure789!')">Fill Credentials Only</button>
-              <button type="button" class="flex-1 text-[10px] bg-brand-cyan/15 hover:bg-brand-cyan/25 text-brand-cyan border border-brand-cyan/30 rounded py-1 transition" onclick="fill('admin','AdminSecure789!','admin-workstation')">Fill All (Auto)</button>
-            </div>
-          </div>
-          <p class="text-[11px] text-slate-400 mt-1.5 text-center">
-            💡 Type in a different Device ID to simulate a threat scenario (Unknown Device).
-          </p>
-        </div>
-      </div>
 
       <p class="text-center mt-6 text-xs">
         <a class="text-brand-cyan hover:underline flex items-center justify-center gap-1" href="/logs">📋 View Attack Logs</a>
@@ -218,18 +160,6 @@
   function togglePwd() {
     const p = document.getElementById('password');
     p.type = p.type === 'password' ? 'text' : 'password';
-  }
-  function toggleDemo(btn) {
-    const d = document.getElementById('demo-creds');
-    d.classList.toggle('hidden');
-    btn.textContent = d.classList.contains('hidden')
-      ? '🧪 Test Credentials (click to expand)'
-      : '🧪 Test Credentials (click to hide)';
-  }
-  function fill(u, p, d) {
-    document.getElementById('username').value = u;
-    document.getElementById('password').value = p;
-    document.getElementById('device_id').value = d || '';
   }
 </script>
 </body>

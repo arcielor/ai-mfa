@@ -1,20 +1,12 @@
 {
-  "alice": {
-    "password": "Password123!",
-    "email": "alice@demo.com",
-    "known_device": "dev-r67dgv",
-    "role": "student"
+  "stud1": {
+    "password": "stud123",
+    "email": "stud1@test.com",
+    "known_device": "device-01"
   },
-  "bob": {
-    "password": "SecurePass456!",
-    "email": "bob@demo.com",
-    "known_device": "phone-02",
-    "role": "student"
-  },
-  "admin": {
-    "password": "AdminSecure789!",
-    "email": "admin@demo.com",
-    "known_device": "admin-workstation",
-    "role": "admin"
+  "stud2": {
+    "password": "stud234",
+    "email": "stud2@test.com",
+    "known_device": "device-02"
   }
 }
