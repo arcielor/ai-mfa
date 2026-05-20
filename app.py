@@ -232,15 +232,16 @@ def login():
         # ── generate OTP ──
         otp = generate_otp()
         otp_store = load_json(OTP_FILE, {})
-        otp_store[username] = {"otp": otp, "expires": time.time() + 60}
+        otp_store[username] = {"otp": otp, "expires": time.time() + 15}
         save_json(OTP_FILE, otp_store)
 
-        session["username"]   = username
-        session["risk_level"] = risk_level
-        session["rule_score"] = rule_score
-        session["confidence"] = confidence
-        session["device_id"]  = device_id
-        session["demo_otp"]   = otp   # shown on OTP page for demo
+        session["username"]     = username
+        session["risk_level"]   = risk_level
+        session["rule_score"]   = rule_score
+        session["confidence"]   = confidence
+        session["device_id"]    = device_id
+        session["demo_otp"]     = otp   # shown on OTP page for demo
+        session["resend_count"] = 0
 
         append_log({
             **features, "username": username, "device_id": device_id,
@@ -305,11 +306,58 @@ def otp_page():
     record = otp_store.get(username, {})
     expires = record.get("expires", 0)
     remaining_seconds = int(max(0, expires - time.time()))
+    resend_count = session.get("resend_count", 0)
 
     return render_template("otp.html",
         username=username, risk_level=risk_level,
         rule_score=rule_score, confidence=confidence, demo_otp=demo_otp,
-        remaining_seconds=remaining_seconds)
+        remaining_seconds=remaining_seconds, resend_count=resend_count)
+
+
+@app.route("/resend-otp")
+def resend_otp():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+    resend_count = session.get("resend_count", 0)
+
+    if resend_count >= 2:
+        flash("Maximum OTP resend limit reached. Please log in again.", "error")
+        append_log({
+            "username": username, "device_id": session.get("device_id"),
+            "ip": request.remote_addr, "risk_level": session.get("risk_level", "low"),
+            "rule_score": session.get("rule_score", 0), "ml_confidence": session.get("confidence", 0),
+            "action": "otp_resend_blocked", "outcome": "resend_limit_exceeded",
+            "failed_attempts": 0, "short_interval": 0,
+            "unknown_device": 0, "unusual_hour": 0, "password_match": 1,
+        })
+        session.clear()
+        return redirect(url_for("login"))
+
+    # Increment resend count
+    resend_count += 1
+    session["resend_count"] = resend_count
+
+    # Generate new 15-second OTP
+    otp = generate_otp()
+    otp_store = load_json(OTP_FILE, {})
+    otp_store[username] = {"otp": otp, "expires": time.time() + 15}
+    save_json(OTP_FILE, otp_store)
+
+    session["demo_otp"] = otp
+
+    append_log({
+        "username": username, "device_id": session.get("device_id"),
+        "ip": request.remote_addr, "risk_level": session.get("risk_level", "low"),
+        "rule_score": session.get("rule_score", 0), "ml_confidence": session.get("confidence", 0),
+        "action": "otp_resent", "outcome": f"resend_{resend_count}_of_2",
+        "failed_attempts": 0, "short_interval": 0,
+        "unknown_device": 0, "unusual_hour": 0, "password_match": 1,
+    })
+
+    flash(f"A new OTP has been generated! (Resend {resend_count}/2)", "success")
+    return redirect(url_for("otp_page"))
 
 
 @app.route("/success")

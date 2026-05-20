@@ -136,14 +136,22 @@
               inputmode="numeric" pattern="\d{6}" required
               class="w-full p-4 rounded-xl bg-white/5 border-2 border-brand-cyan/30 text-brand-cyan text-3xl font-mono font-semibold text-center tracking-[0.3em] pl-[0.3em] outline-none transition focus:border-brand-cyan focus:ring-4 focus:ring-brand-cyan/12">
             <div class="mt-3 text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
-              Code expires in: <span id="timer" class="font-mono font-semibold text-brand-cyan">01:00</span>
+              Code expires in: <span id="timer" class="font-mono font-semibold text-brand-cyan">00:15</span>
             </div>
           </div>
-          <button type="submit"
+          <button type="submit" id="verify-btn"
             class="w-full p-3.5 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-blue-600 to-brand-cyan text-white shadow-[0_4px_20px_rgba(0,150,255,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_28px_rgba(0,150,255,0.45)] active:translate-y-0 mt-3">
             Verify OTP
           </button>
         </form>
+
+        <div id="resend-container" class="hidden mt-4 text-center">
+          {% if resend_count < 2 %} <a href="/resend-otp"
+            class="inline-block w-full bg-brand-cyan/15 border border-brand-cyan/35 hover:bg-brand-cyan/25 text-brand-cyan hover:text-white rounded-xl px-5 py-3.5 cursor-pointer text-sm font-semibold transition text-center shadow-[0_4px_15px_rgba(0,212,255,0.1)]">
+            Resend OTP ({{ 2 - resend_count }} times left)
+            </a>
+            {% endif %}
+        </div>
 
         <hr class="border-0 border-t border-white/10 my-6">
         <div class="text-center">
@@ -180,16 +188,40 @@
     document.getElementById('otp').focus();
 
     // ── Countdown Timer ──
-    let timeLeft = parseInt("{{ remaining_seconds }}") || 60;
+    let timeLeft = parseInt("{{ remaining_seconds }}");
+    if (isNaN(timeLeft)) {
+      timeLeft = 15;
+    }
     const timerEl = document.getElementById('timer');
 
     function updateTimer() {
       if (timeLeft <= 0) {
         timerEl.textContent = "Expired";
         timerEl.className = "font-semibold text-brand-red animate-pulse";
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+
+        const resendCount = parseInt("{{ resend_count }}") || 0;
+        if (resendCount >= 2) {
+          window.location.href = "/logout";
+          return;
+        }
+
+        // Disable OTP input and Verify button
+        const otpInput = document.getElementById('otp');
+        if (otpInput) {
+          otpInput.disabled = true;
+          otpInput.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+        const verifyBtn = document.getElementById('verify-btn');
+        if (verifyBtn) {
+          verifyBtn.disabled = true;
+          verifyBtn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        }
+
+        // Show resend container
+        const resendContainer = document.getElementById('resend-container');
+        if (resendContainer) {
+          resendContainer.classList.remove('hidden');
+        }
         return;
       }
       const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
