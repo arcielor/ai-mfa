@@ -82,6 +82,7 @@ def extract_features(username, device_id, password_correct, client_hour=None):
         "unknown_device":  unknown_device,
         "unusual_hour":    unusual_hour,
         "password_match":  1 if password_correct else 0,
+        "otp_resends": session.get("resend_count", 0)
     }
     t["last_attempt_time"] = now
     return features
@@ -204,7 +205,7 @@ def login():
             flash(f"Invalid credentials. Risk: {risk_level.upper()} | Score: {rule_score} | Attempt {t['failed_attempts']}/{BLOCK_THRESHOLD}", "error")
             return redirect(url_for("login"))
 
-        # ── correct password ──
+        # correct password 
         t["failed_attempts"] = 0
         session["failed_attempts"] = 0
 
@@ -215,7 +216,7 @@ def login():
             features["unknown_device"] = 0   # update after registration
             risk_int, confidence, risk_level, rule_score = predict_risk(features)
 
-        # ── high risk → block ──
+        # ── high risk → block
         if risk_level == "high":
             t["blocked_until"] = time.time() + BLOCK_DURATION
             append_log({
@@ -347,13 +348,39 @@ def resend_otp():
 
     session["demo_otp"] = otp
 
+    # Re-evaluate threat risk after resend , block if high risk
+    features = extract_features(username, session.get("device_id"), True)
+    risk_int, confidence, risk_level, rule_score = predict_risk(features)
+
+    session["risk_level"] = risk_level
+    session["rule_score"] = rule_score
+    session["confidence"] = confidence
+
+    if risk_level == "high":
+        init_tracker(username)
+        t = login_tracker[username]
+        t["blocked_until"] = time.time() + BLOCK_DURATION
+        append_log({
+            **features, "username": username, "device_id": session.get("device_id"),
+            "ip": request.remote_addr, "risk_level": risk_level,
+            "rule_score": rule_score, "ml_confidence": confidence,
+            "action": "blocked", "outcome": "high_risk_on_resend"
+        })
+        # Clear OTP and session state
+        otp_store = load_json(OTP_FILE, {})
+        otp_store.pop(username, None)
+        save_json(OTP_FILE, otp_store)
+        return render_template("blocked.html", remaining=BLOCK_DURATION, username=username)
+
+    # ── medium risk → delay ──
+    if risk_level == "medium":
+        time.sleep(3)
+
     append_log({
-        "username": username, "device_id": session.get("device_id"),
-        "ip": request.remote_addr, "risk_level": session.get("risk_level", "low"),
-        "rule_score": session.get("rule_score", 0), "ml_confidence": session.get("confidence", 0),
-        "action": "otp_resent", "outcome": f"resend_{resend_count}_of_2",
-        "failed_attempts": 0, "short_interval": 0,
-        "unknown_device": 0, "unusual_hour": 0, "password_match": 1,
+        **features, "username": username, "device_id": session.get("device_id"),
+        "ip": request.remote_addr, "risk_level": risk_level,
+        "rule_score": rule_score, "ml_confidence": confidence,
+        "action": "otp_resent", "outcome": f"resend_{resend_count}_of_2"
     })
 
     flash(f"A new OTP has been generated! (Resend {resend_count}/2)", "success")

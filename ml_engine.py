@@ -6,13 +6,15 @@ import random
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "risk_model.pkl")
 
-def _rule_score(failed, short_interval, unknown_device, unusual_hour, password_match):
+def _rule_score(failed, short_interval, unknown_device, unusual_hour, password_match, otp_resends):
     score = 0
     if failed >= 3:          score += 2
     if short_interval == 1:  score += 2
     if unknown_device == 1:  score += 1
     if unusual_hour == 1:    score += 1
     if password_match == 0:  score += 2
+    if otp_resends == 1:     score += 2
+    elif otp_resends >= 2:   score += 4
     return score
 
 def _generate_training_data(n=3000):
@@ -21,13 +23,14 @@ def _generate_training_data(n=3000):
     X, y = [], []
     for _ in range(n):
         f = rng.randint(0, 10)
-        si = rng.randint(0, 1)
-        ud = rng.randint(0, 1)
-        uh = rng.randint(0, 1)
-        pm = rng.randint(0, 1)
-        score = _rule_score(f, si, ud, uh, pm)
+        si = rng.randint(0, 1) # short_interval
+        ud = rng.randint(0, 1) # unknown_device
+        uh = rng.randint(0, 1) # unusual_hour
+        pm = rng.randint(0, 1) # password_match
+        r = rng.randint(0, 1)  # otp_resends
+        score = _rule_score(f, si, ud, uh, pm, r)
         label = 2 if score >= 5 else (1 if score >= 3 else 0)
-        X.append([f, si, ud, uh, pm])
+        X.append([f, si, ud, uh, pm, r])
         y.append(label)
     return np.array(X), np.array(y)
 
@@ -66,6 +69,7 @@ def predict_risk(features: dict):
         features["unknown_device"],
         features["unusual_hour"],
         features["password_match"],
+        features["otp_resends"],
     ]])
     pred = int(_model.predict(X)[0])
     probs = _model.predict_proba(X)[0]
@@ -76,6 +80,6 @@ def predict_risk(features: dict):
     rule_score = _rule_score(
         features["failed_attempts"], features["short_interval"],
         features["unknown_device"], features["unusual_hour"],
-        features["password_match"]
+        features["password_match"], features["otp_resends"]
     )
     return pred, confidence, risk_map[pred], rule_score

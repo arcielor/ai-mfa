@@ -146,11 +146,20 @@
         </form>
 
         <div id="resend-container" class="hidden mt-4 text-center">
-          {% if resend_count < 2 %} <a href="/resend-otp"
+          {% if resend_count < 2 %}
+          <a href="/resend-otp"
             class="inline-block w-full bg-brand-cyan/15 border border-brand-cyan/35 hover:bg-brand-cyan/25 text-brand-cyan hover:text-white rounded-xl px-5 py-3.5 cursor-pointer text-sm font-semibold transition text-center shadow-[0_4px_15px_rgba(0,212,255,0.1)]">
             Resend OTP ({{ 2 - resend_count }} times left)
-            </a>
-            {% endif %}
+          </a>
+          {% else %}
+          <div class="p-3.5 rounded-xl text-xs bg-brand-red/10 border border-brand-red/30 text-rose-400 font-semibold uppercase tracking-wider mb-3">
+            No resends remaining
+          </div>
+          <a href="/logout"
+            class="inline-block w-full bg-brand-red/15 border border-brand-red/35 hover:bg-brand-red/25 text-brand-red rounded-xl px-5 py-3.5 cursor-pointer text-sm font-semibold transition text-center">
+            Return to Login
+          </a>
+          {% endif %}
         </div>
 
         <hr class="border-0 border-t border-white/10 my-6">
@@ -199,11 +208,6 @@
         timerEl.textContent = "Expired";
         timerEl.className = "font-semibold text-brand-red animate-pulse";
 
-        const resendCount = parseInt("{{ resend_count }}") || 0;
-        if (resendCount >= 2) {
-          window.location.href = "/logout";
-          return;
-        }
 
         // Disable OTP input and Verify button
         const otpInput = document.getElementById('otp');
