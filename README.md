@@ -1,6 +1,6 @@
 # AI/ML-Enhanced Multi-Factor Authentication (MFA)
 
-This repository contains a secure authentication prototype that integrates **Machine Learning (ML) behavioral scoring** with **Multi-Factor Authentication (MFA)** to detect and mitigate password guessing attacks in real-time.
+This repository contains a secure authentication prototype that integrates **Machine Learning (ML) behavioral scoring** with **Multi-Factor Authentication (MFA)** and **Google reCAPTCHA** to detect and mitigate password guessing attacks in real-time.
 
 ---
 
@@ -21,6 +21,17 @@ Based on the threat features, the ML model classifies the login attempt into one
 *   **🟢 LOW RISK**: The user proceeds to standard MFA (OTP) verification immediately.
 *   **🟡 MEDIUM RISK**: The system enforces a **3-second delay** (to slow down automated dictionary attacks) before presenting the MFA prompt.
 *   **🔴 HIGH RISK**: The attempt is immediately blocked, and the account is locked for **60 seconds** to mitigate active attacks.
+
+---
+
+## 🤖 Google reCAPTCHA Verification
+
+To protect the login gateway from automated credential stuffing and bot networks:
+*   **Dynamic Trigger**: The Google reCAPTCHA v2 Checkbox is displayed only after **3 consecutive failed login attempts** in the user's session.
+*   **Keys Configured**:
+    *   **Site Key:** `6LedwPMsAAAAAK6Hf6KBZVegFhyJWA-Sg8w_3RYK` (serving HTML widget)
+    *   **Secret Key:** `6LedwPMsAAAAABN5dk3-A1TsHwg0OFqjXpDl4F7d` (server-side verification API)
+*   **Server-Side Check**: Verifies the response payload against `https://www.google.com/recaptcha/api/siteverify` before processing credentials.
 
 ---
 

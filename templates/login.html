@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SecureAuth — AI/ML-Enhanced MFA Login</title>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -95,6 +96,12 @@
             <span>Auto-detected: <code class="text-brand-cyan cursor-pointer underline hover:text-white font-mono" onclick="useFingerprint()" id="fingerprint-val">Loading...</code></span>
           </div>
         </div>
+
+        {% if show_recaptcha %}
+        <div class="mb-5 flex justify-center">
+          <div class="g-recaptcha shadow-md rounded-lg overflow-hidden border border-white/5" data-sitekey="6LedwPMsAAAAAK6Hf6KBZVegFhyJWA-Sg8w_3RYK" data-theme="dark"></div>
+        </div>
+        {% endif %}
 
         <button type="submit" class="w-full p-3.5 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-blue-600 to-brand-cyan text-white shadow-[0_4px_20px_rgba(0,150,255,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_28px_rgba(0,150,255,0.45)] active:translate-y-0 mt-2">
           🔐 Authenticate

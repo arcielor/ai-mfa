@@ -1,11 +1,11 @@
 {
   "stud1": {
-    "password": "stud123",
+    "password": "$2b$12$dK0OKTwJfE6c1OOIsPzA5eikG8cz2lezBuypcvrCSp2xY5T90ZV2q",
     "email": "stud1@test.com",
     "known_device": "device-01"
   },
   "stud2": {
-    "password": "stud234",
+    "password": "$2b$12$XATOEYzTv1g6BWOw6QvN5O5FtJZpmDGN.IFI3UePk.RCly/h9sbM.",
     "email": "stud2@test.com",
     "known_device": "device-02"
   }

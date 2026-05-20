@@ -117,6 +117,55 @@ def login():
         if client_time:
             session["client_time"] = client_time
 
+        # ── reCAPTCHA verification ──
+        show_recaptcha = (session.get("failed_attempts", 0) >= 3)
+        if show_recaptcha:
+            recaptcha_response = request.form.get("g-recaptcha-response")
+            if not recaptcha_response:
+                flash("Please complete the reCAPTCHA verification.", "error")
+                return redirect(url_for("login"))
+            
+            # Verify against Google reCAPTCHA siteverify API
+            import urllib.request, urllib.parse
+            import json
+            
+            secret_key = "6LedwPMsAAAAABN5dk3-A1TsHwg0OFqjXpDl4F7d" # User-supplied reCAPTCHA secret key
+            url = "https://www.google.com/recaptcha/api/siteverify"
+            data = urllib.parse.urlencode({
+                "secret": secret_key,
+                "response": recaptcha_response,
+                "remoteip": ip
+            }).encode("utf-8")
+            
+            try:
+                req = urllib.request.Request(url, data=data, method="POST")
+                with urllib.request.urlopen(req) as response:
+                    res_data = json.loads(response.read().decode("utf-8"))
+                    
+                if not res_data.get("success"):
+                    session["failed_attempts"] = session.get("failed_attempts", 0) + 1
+                    append_log({
+                        "failed_attempts": session.get("failed_attempts", 0),
+                        "short_interval": 0,
+                        "unknown_device": 1,
+                        "unusual_hour": 0,
+                        "password_match": 0,
+                        "username": username,
+                        "device_id": device_id,
+                        "ip": ip,
+                        "risk_level": "medium",
+                        "rule_score": 0,
+                        "ml_confidence": 0.0,
+                        "action": "blocked",
+                        "outcome": "recaptcha_failed"
+                    })
+                    flash("reCAPTCHA verification failed. Please try again.", "error")
+                    return redirect(url_for("login"))
+            except Exception as e:
+                print(f"[ERROR] reCAPTCHA verification exception: {e}")
+                flash("An error occurred during reCAPTCHA verification. Please try again.", "error")
+                return redirect(url_for("login"))
+
         users = load_json(USERS_FILE, {})
         init_tracker(username)
         t = login_tracker[username]
@@ -138,6 +187,7 @@ def login():
         # ── wrong password ──
         if not password_correct:
             t["failed_attempts"] += 1
+            session["failed_attempts"] = session.get("failed_attempts", 0) + 1
             append_log({
                 **features, "username": username, "device_id": device_id,
                 "ip": ip, "risk_level": risk_level, "rule_score": rule_score,
@@ -156,6 +206,7 @@ def login():
 
         # ── correct password ──
         t["failed_attempts"] = 0
+        session["failed_attempts"] = 0
 
         # Update known_device on first login
         if not users[username].get("known_device"):
@@ -199,7 +250,8 @@ def login():
         print(f"[DEMO OTP for {username}]: {otp}")
         return redirect(url_for("otp_page"))
 
-    return render_template("login.html")
+    show_recaptcha = (session.get("failed_attempts", 0) >= 3)
+    return render_template("login.html", show_recaptcha=show_recaptcha)
 
 
 @app.route("/otp", methods=["GET", "POST"])
