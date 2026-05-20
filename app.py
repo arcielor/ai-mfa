@@ -232,7 +232,7 @@ def login():
         # ── generate OTP ──
         otp = generate_otp()
         otp_store = load_json(OTP_FILE, {})
-        otp_store[username] = {"otp": otp, "expires": time.time() + 300}
+        otp_store[username] = {"otp": otp, "expires": time.time() + 60}
         save_json(OTP_FILE, otp_store)
 
         session["username"]   = username
@@ -301,9 +301,15 @@ def otp_page():
         })
         flash("Incorrect OTP. Please try again.", "error")
 
+    otp_store = load_json(OTP_FILE, {})
+    record = otp_store.get(username, {})
+    expires = record.get("expires", 0)
+    remaining_seconds = int(max(0, expires - time.time()))
+
     return render_template("otp.html",
         username=username, risk_level=risk_level,
-        rule_score=rule_score, confidence=confidence, demo_otp=demo_otp)
+        rule_score=rule_score, confidence=confidence, demo_otp=demo_otp,
+        remaining_seconds=remaining_seconds)
 
 
 @app.route("/success")
