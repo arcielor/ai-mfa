@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, has_request_context
 import json, os, random, time, bcrypt
 from datetime import datetime
 from ml_engine import predict_risk
@@ -89,7 +89,10 @@ def extract_features(username, device_id, password_correct, client_hour=None):
 def append_log(entry):
     logs = load_json(LOG_FILE, [])
     entry["id"] = len(logs) + 1
-    entry["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if has_request_context() and session.get("client_time"):
+        entry["timestamp"] = session.get("client_time")
+    else:
+        entry["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logs.append(entry)
     save_json(LOG_FILE, logs)
 
@@ -108,7 +111,11 @@ def login():
         password  = request.form.get("password", "")
         device_id = request.form.get("device_id", "unknown")
         client_hour = request.form.get("client_hour")
+        client_time = request.form.get("client_time")
         ip        = request.remote_addr
+
+        if client_time:
+            session["client_time"] = client_time
 
         users = load_json(USERS_FILE, {})
         init_tracker(username)
