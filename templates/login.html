@@ -34,87 +34,106 @@
 <body class="font-sans antialiased text-slate-200">
 <!-- ── Live Date Time Badge ── -->
 <div class="absolute top-6 left-1/2 -translate-x-1/2 z-50">
-  <div class="bg-brand-bg2/60 border border-brand-cyan/20 px-4 py-2 rounded-full backdrop-blur-md shadow-lg text-[11px] font-mono tracking-wider text-slate-300 whitespace-nowrap flex items-center gap-2">
-    <span class="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse-bar"></span>
+  <div class="bg-white border border-[#cfd9de] px-4 py-2 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.05)] text-[11px] font-mono tracking-wider text-[#536471] flex items-center gap-2">
+    <span class="w-1.5 h-1.5 rounded-full bg-[#1d9bf0] animate-pulse-bar"></span>
     <span id="live-clock">Loading time...</span>
   </div>
 </div>
 
-<div class="relative z-10 min-h-screen flex items-center justify-center py-8 px-4">
-  <div class="w-full max-w-[440px]">
+<!-- Top Left Demo Panel -->
+<div class="fixed top-6 left-6 z-50 w-[300px] p-5 bg-white border border-slate-200 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-[13px] font-bold text-[#0f1419] uppercase tracking-wider m-0">🛠 Demo Tools</h3>
+  </div>
+  
+  <div class="mb-4">
+    <label for="spoofed_ip" class="block text-[12px] font-bold text-[#536471] uppercase tracking-wide mb-2">Spoof IP Address</label>
+    <input type="text" id="spoofed_ip" name="spoofed_ip" form="login-form" placeholder="e.g. 185.220.101.1" class="w-full py-2.5 px-3 border border-slate-300 rounded-md text-[13px] font-mono text-[#0f1419] outline-none focus:border-[#1d9bf0] focus:ring-1 focus:ring-[#1d9bf0] transition-colors">
+  </div>
+  <div class="mb-2">
+    <label for="client_hour" class="block text-[12px] font-bold text-[#536471] uppercase tracking-wide mb-2">Spoof Time (Hour 0-23)</label>
+    <input type="number" id="client_hour" name="client_hour" form="login-form" min="0" max="23" class="w-full py-2.5 px-3 border border-slate-300 rounded-md text-[13px] font-mono text-[#0f1419] outline-none focus:border-[#1d9bf0] focus:ring-1 focus:ring-[#1d9bf0] transition-colors">
+  </div>
+  <p class="text-[11px] text-[#536471] leading-relaxed m-0 mt-3">
+    Overrides actual IP and time to trigger Geolocation, Proxy & Unusual Hour ML rules.
+  </p>
+</div>
 
-    <!-- ── Main Card ── -->
-    <div class="w-full bg-brand-bg2/85 border border-brand-cyan/15 rounded-[20px] p-8 lg:p-10 backdrop-blur-3xl shadow-[0_0_60px_rgba(0,212,255,0.06),0_24px_64px_rgba(0,0,0,0.5)]">
-      <div class="flex items-center gap-3 mb-8">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-cyan/10 to-brand-purple/25 border border-brand-cyan/15 grid place-items-center text-2xl">🛡️</div>
-        <div>
-          <h1 class="text-xl font-bold tracking-tight text-white leading-none">SecureAuth</h1>
-          <span class="block text-[11px] text-slate-400 mt-1.5 uppercase tracking-wider">AI/ML-Enhanced MFA System</span>
+
+<div class="relative z-10 min-h-screen flex items-center justify-center py-8 px-4 bg-white text-[#0f1419] font-sans transition-colors duration-300">
+  <div class="w-full max-w-[440px] mx-auto p-8 border border-slate-200 rounded-2xl shadow-sm bg-white">
+    <h1 class="text-2xl font-bold tracking-tight mb-8 text-center">Sign in to SecureAuth</h1>
+
+    {% if anomaly_msg %}
+      <div class="mb-6 p-4 rounded-lg text-sm text-center shadow-sm bg-red-50 text-[#842029] border border-red-200">
+        <p class="font-bold mb-2">{{ anomaly_msg }}</p>
+        <p class="mb-3 text-[13px]">To proceed, we require an OTP confirmation.</p>
+        <a href="/send-device-otp" class="inline-block py-2 px-4 rounded-full font-bold text-[13px] bg-[#842029] text-white hover:bg-[#6c1a22] transition-colors no-underline">
+          Send OTP
+        </a>
+      </div>
+    {% endif %}
+
+    {% if fallback_otp %}
+      <div class="mb-6 p-4 rounded-lg text-sm text-center shadow-sm bg-red-50 text-[#842029] border border-red-200">
+        <p class="font-bold mb-2">Invalid credentials. Attempt {{ failed_attempts }}/{{ threshold }}</p>
+        <p class="mb-3 text-[13px]">Having trouble remembering your password?</p>
+        <a href="/send-device-otp" class="inline-block py-2 px-4 rounded-full font-bold text-[13px] bg-white text-[#842029] border border-[#842029] hover:bg-red-50 transition-colors no-underline">
+          Login with OTP
+        </a>
+      </div>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages and not fallback_otp and not anomaly_msg %}
+        <div class="mb-6">
+        {% for category, message in messages %}
+          <div class="p-3 mb-2 rounded text-sm text-white text-center shadow-sm {% if category == 'error' %}bg-red-500{% else %}bg-green-500{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
         </div>
+      {% endif %}
+    {% endwith %}
+
+    <form id="login-form" method="POST" action="/">
+      <input type="hidden" id="client_time" name="client_time" value="">
+      
+      <div class="relative mb-6">
+        <label for="username" class="absolute left-3 top-1 text-[11px] font-semibold text-[#536471] uppercase tracking-wider">Username</label>
+        <input type="text" id="username" name="username" placeholder="e.g. stud1" required autocomplete="username" class="w-full pt-5 pb-2 px-3 border border-slate-300 rounded-[4px] text-[15px] text-[#0f1419] outline-none focus:border-[#1d9bf0] focus:ring-1 focus:ring-[#1d9bf0] transition-colors placeholder:text-slate-300">
       </div>
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for cat, msg in messages %}
-            {% if cat == 'error' or cat == 'danger' %}
-              <div class="p-3.5 rounded-xl text-xs mb-5 flex items-center gap-2.5 bg-brand-red/10 border border-brand-red/30 text-rose-400">⚠️ {{ msg }}</div>
-            {% elif cat == 'success' %}
-              <div class="p-3.5 rounded-xl text-xs mb-5 flex items-center gap-2.5 bg-brand-green/10 border border-brand-green/25 text-emerald-400">⚠️ {{ msg }}</div>
-            {% else %}
-              <div class="p-3.5 rounded-xl text-xs mb-5 flex items-center gap-2.5 bg-brand-cyan/8 border border-brand-cyan/20 text-brand-cyan">⚠️ {{ msg }}</div>
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
+      <div class="relative mb-6">
+        <label for="password" class="absolute left-3 top-1 text-[11px] font-semibold text-[#536471] uppercase tracking-wider">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password" class="w-full pt-5 pb-2 px-3 border border-slate-300 rounded-[4px] text-[15px] text-[#0f1419] outline-none focus:border-[#1d9bf0] focus:ring-1 focus:ring-[#1d9bf0] transition-colors placeholder:text-slate-300">
+        <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate-400 hover:text-slate-600" onclick="const p=document.getElementById('password');p.type=p.type==='password'?'text':'password'">👁</button>
+      </div>
 
-      <form method="POST" action="/">
-        <input type="hidden" id="client_hour" name="client_hour">
-        <input type="hidden" id="client_time" name="client_time">
-        <div class="mb-5">
-          <label for="username" class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Username</label>
-          <div class="relative">
-            <input type="text" id="username" name="username" placeholder="Enter username" required autocomplete="username" class="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 outline-none transition duration-200 focus:border-brand-cyan focus:ring-4 focus:ring-brand-cyan/10">
-          </div>
-        </div>
-
-        <div class="mb-5">
-          <label for="password" class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
-          <div class="relative">
-            <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="current-password" class="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 outline-none transition duration-200 focus:border-brand-cyan focus:ring-4 focus:ring-brand-cyan/10">
-            <button type="button" class="absolute right-3.5 top-1/2 -translate-y-1/2 bg-transparent border-none text-slate-400 cursor-pointer text-base leading-none hover:text-white transition" onclick="togglePwd()" title="Show/hide">👁</button>
-          </div>
-        </div>
-
-        <div class="mb-5">
-          <label for="device_id" class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-            Device ID <span class="text-[10px] bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 rounded px-1.5 py-0.5 ml-1.5 normal-case tracking-normal">Required</span>
-          </label>
-          <div class="relative">
-            <input type="text" id="device_id" name="device_id" required placeholder="Type device ID (e.g., dev-r67dgv, phone-02)" class="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 outline-none transition duration-200 focus:border-brand-cyan focus:ring-4 focus:ring-brand-cyan/10 font-mono text-xs text-brand-cyan">
-          </div>
-          <div class="mt-1.5 text-[10px] text-slate-400 flex items-center justify-between px-1">
-            <span>Auto-detected: <code class="text-brand-cyan cursor-pointer underline hover:text-white font-mono" onclick="useFingerprint()" id="fingerprint-val">Loading...</code></span>
-          </div>
-        </div>
-
-        {% if show_recaptcha %}
-        <div class="mb-5 flex justify-center">
-          <div class="g-recaptcha shadow-md rounded-lg overflow-hidden border border-white/5" data-sitekey="6LedwPMsAAAAAK6Hf6KBZVegFhyJWA-Sg8w_3RYK" data-theme="dark"></div>
-        </div>
-        {% endif %}
-
-        <button type="submit" class="w-full p-3.5 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-blue-600 to-brand-cyan text-white shadow-[0_4px_20px_rgba(0,150,255,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_28px_rgba(0,150,255,0.45)] active:translate-y-0 mt-2">
-          🔐 Authenticate
-        </button>
-      </form>
+      <div class="relative mb-8">
+        <label for="device_id" class="absolute left-3 top-1 text-[11px] font-semibold text-[#536471] uppercase tracking-wider">Device ID</label>
+        <input type="text" id="device_id" name="device_id" placeholder="e.g. device-01" required class="w-full pt-6 pb-2 px-3 border border-slate-300 rounded-[4px] text-[15px] font-mono text-[#0f1419] outline-none focus:border-[#1d9bf0] focus:ring-1 focus:ring-[#1d9bf0] transition-colors placeholder:text-slate-300">
+      </div>
 
 
-      <p class="text-center mt-6 text-xs">
-        <a class="text-brand-cyan hover:underline flex items-center justify-center gap-1" href="/logs">📋 View Attack Logs</a>
-      </p>
-    </div>
+
+      {% if show_recaptcha %}
+      <div class="mb-6 flex justify-center">
+        <div class="g-recaptcha" data-sitekey="6LedwPMsAAAAAK6Hf6KBZVegFhyJWA-Sg8w_3RYK"></div>
+      </div>
+      {% endif %}
+
+      <button type="submit" class="w-full py-3.5 rounded-full font-bold text-[15px] cursor-pointer transition-colors duration-200 bg-[#1d9bf0] text-white hover:bg-[#1a8cd8] shadow-sm border-0">
+        Authenticate
+      </button>
+    </form>
+
+    <p class="mt-8 text-center text-[13px]">
+      <a class="text-[#1d9bf0] hover:underline font-semibold" href="/logs">View Attack Logs</a>
+    </p>
   </div>
 </div>
+
 
 <script>
   // ── Live Date Time Badge ──

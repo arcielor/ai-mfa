@@ -42,133 +42,53 @@
     </div>
   </div>
 
-  <div class="relative z-10 min-h-screen flex items-center justify-center py-8 px-4">
-    <div class="w-full max-w-[440px]">
-
-      <!-- ── Main Card ── -->
-      <div
-        class="w-full bg-brand-bg2/85 border border-brand-cyan/15 rounded-[20px] p-8 lg:p-10 backdrop-blur-3xl shadow-[0_0_60px_rgba(0,212,255,0.06),0_24px_64px_rgba(0,0,0,0.5)]">
-        <div class="flex items-center gap-3 mb-6">
-          <div
-            class="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-cyan/10 to-brand-purple/25 border border-brand-cyan/15 grid place-items-center text-2xl">
-            🔑</div>
-          <div>
-            <h1 class="text-xl font-bold tracking-tight text-white leading-none">MFA Verification</h1>
-            <span class="block text-[11px] text-slate-400 mt-1.5 uppercase tracking-wider">Step 2 of 2 — One-Time
-              Password</span>
-          </div>
-        </div>
-
-        <!-- Risk badge info -->
-        <div class="flex items-center gap-2.5 mb-5 flex-wrap">
-          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider
-          {% if risk_level == 'low' %}bg-brand-green/10 text-brand-green border border-brand-green/30
-          {% elif risk_level == 'medium' %}bg-brand-yellow/10 text-brand-yellow border border-brand-yellow/30
-          {% else %}bg-brand-red/15 text-brand-red border border-brand-red/35{% endif %}">
-            {% if risk_level == 'low' %}🟢{% elif risk_level == 'medium' %}🟡{% else %}🔴{% endif %}
-            {{ risk_level|upper }} RISK
-          </span>
-          <span class="text-xs text-slate-400">
-            Rule score: <strong class="text-white">{{ rule_score }}/8</strong> &nbsp;|&nbsp;
-            ML confidence: <strong class="text-brand-cyan">{{ confidence }}%</strong>
-          </span>
-        </div>
-
-        <!-- Risk meter progress bar -->
-        <div class="mb-6">
-          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 flex justify-between">
-            <span>Threat Level</span>
-            <span
-              class="{% if risk_level == 'low' %}text-brand-green{% elif risk_level == 'medium' %}text-brand-yellow{% else %}text-brand-red{% endif %}">{{
-              risk_level|upper }}</span>
-          </div>
-          <div class="h-2 rounded-full bg-white/10 overflow-hidden">
-            <div class="h-full rounded-full transition-all duration-700
-            {% if risk_level == 'low' %}w-1/5 bg-gradient-to-r from-brand-green to-emerald-400
-            {% elif risk_level == 'medium' %}w-[55%] bg-gradient-to-r from-brand-yellow to-amber-500
-            {% else %}w-full bg-gradient-to-r from-brand-red to-rose-400 animate-pulse-bar{% endif %}">
-            </div>
-          </div>
-        </div>
-
-        <!-- DEMO OTP display box -->
-        <div class="bg-brand-yellow/10 border border-dashed border-brand-yellow/40 rounded-xl p-4 my-5 text-center">
-          <div
-            class="text-[10px] uppercase tracking-wider font-semibold text-brand-yellow mb-1.5 flex items-center justify-center gap-1.5">
-            DEMO MODE — OTP (would be sent via email in production)
-          </div>
-          <div class="font-mono text-3xl font-bold text-brand-yellow tracking-[0.3em] pl-[0.3em]" id="otp-display">{{
-            demo_otp }}</div>
-          <div class="mt-2.5">
-            <button onclick="copyOtp()"
-              class="bg-brand-yellow/15 border border-brand-yellow/30 text-brand-yellow hover:bg-brand-yellow/25 rounded-md px-3.5 py-1 cursor-pointer text-xs font-semibold transition">
-              Copy OTP
-            </button>
-          </div>
-        </div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for cat, msg in messages %}
-        {% if cat == 'error' or cat == 'danger' %}
-        <div
-          class="p-3.5 rounded-xl text-xs mb-5 flex items-center gap-2.5 bg-brand-red/10 border border-brand-red/30 text-rose-400">
-          ⚠️ {{ msg }}</div>
-        {% elif cat == 'success' %}
-        <div
-          class="p-3.5 rounded-xl text-xs mb-5 flex items-center gap-2.5 bg-brand-green/10 border border-brand-green/25 text-emerald-400">
-          ⚠️ {{ msg }}</div>
-        {% else %}
-        <div
-          class="p-3.5 rounded-xl text-xs mb-5 flex items-center gap-2.5 bg-brand-cyan/8 border border-brand-cyan/20 text-brand-cyan">
-          ⚠️ {{ msg }}</div>
-        {% endif %}
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-
-        <form method="POST" action="/otp">
-          <div class="mb-5">
-            <label for="otp"
-              class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5">Enter 6-Digit
-              OTP</label>
-            <input type="text" id="otp" name="otp" maxlength="6" placeholder="––––––" autocomplete="one-time-code"
-              inputmode="numeric" pattern="\d{6}" required
-              class="w-full p-4 rounded-xl bg-white/5 border-2 border-brand-cyan/30 text-brand-cyan text-3xl font-mono font-semibold text-center tracking-[0.3em] pl-[0.3em] outline-none transition focus:border-brand-cyan focus:ring-4 focus:ring-brand-cyan/12">
-            <div class="mt-3 text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
-              Code expires in: <span id="timer" class="font-mono font-semibold text-brand-cyan">00:15</span>
-            </div>
-          </div>
-          <button type="submit" id="verify-btn"
-            class="w-full p-3.5 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-blue-600 to-brand-cyan text-white shadow-[0_4px_20px_rgba(0,150,255,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_28px_rgba(0,150,255,0.45)] active:translate-y-0 mt-3">
-            Verify OTP
-          </button>
-        </form>
-
-        <div id="resend-container" class="hidden mt-4 text-center">
-          {% if resend_count < 2 %}
-          <a href="/resend-otp"
-            class="inline-block w-full bg-brand-cyan/15 border border-brand-cyan/35 hover:bg-brand-cyan/25 text-brand-cyan hover:text-white rounded-xl px-5 py-3.5 cursor-pointer text-sm font-semibold transition text-center shadow-[0_4px_15px_rgba(0,212,255,0.1)]">
-            Resend OTP ({{ 2 - resend_count }} times left)
-          </a>
-          {% else %}
-          <div class="p-3.5 rounded-xl text-xs bg-brand-red/10 border border-brand-red/30 text-rose-400 font-semibold uppercase tracking-wider mb-3">
-            No resends remaining
-          </div>
-          <a href="/logout"
-            class="inline-block w-full bg-brand-red/15 border border-brand-red/35 hover:bg-brand-red/25 text-brand-red rounded-xl px-5 py-3.5 cursor-pointer text-sm font-semibold transition text-center">
-            Return to Login
-          </a>
-          {% endif %}
-        </div>
-
-        <hr class="border-0 border-t border-white/10 my-6">
-        <div class="text-center">
-          <a href="/logout" class="text-brand-cyan hover:underline text-xs">← Back to Login</a>
-        </div>
+<div class="relative z-10 min-h-screen flex items-center justify-center py-8 px-4 bg-white text-[#0f1419] font-sans transition-colors duration-300">
+  <div class="w-full max-w-[600px] mx-auto p-8 border border-slate-200 rounded-2xl shadow-sm bg-white">
+    <div class="flex items-center gap-3 mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight m-0">MFA Verification</h1>
+        <span class="text-[13px] text-[#536471]">Step 2 of 2 — One-Time Password</span>
       </div>
     </div>
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center mb-6">
+      <div class="text-[11px] font-bold text-[#536471] mb-2 uppercase tracking-wide">Demo Mode OTP</div>
+      <div id="otp-display" class="text-2xl font-mono font-bold tracking-[0.2em]">{{ demo_otp }}</div>
+      <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('otp-display').textContent.trim()).then(()=>document.getElementById('otp').value=document.getElementById('otp-display').textContent.trim())" class="mt-2 px-3 py-1 text-[13px] font-semibold bg-white border border-slate-300 rounded-full cursor-pointer text-[#0f1419] hover:bg-slate-50 transition-colors">Copy</button>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for cat, msg in messages %}
+    <div class="p-3 rounded-lg mb-5 text-sm text-center shadow-sm font-bold {% if cat == 'error' %}bg-red-50 border border-red-200 text-[#842029]{% else %}bg-green-50 border border-green-200 text-[#0f5132]{% endif %}">
+      {% if cat == 'error' %}⚠️ {% else %}✅ {% endif %}{{ msg }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/otp">
+      <label for="otp" class="block text-[13px] font-bold mb-2 text-[#0f1419]">Enter 6-Digit OTP</label>
+      <input type="text" id="otp" name="otp" maxlength="6" placeholder="––––––" autocomplete="one-time-code" inputmode="numeric" pattern="\d{6}" required class="w-full p-4 border border-slate-300 rounded-[4px] text-3xl text-center tracking-[0.3em] font-mono text-[#0f1419] bg-white outline-none focus:border-[#1d9bf0] focus:ring-1 focus:ring-[#1d9bf0] disabled:bg-slate-50 disabled:text-[#536471] transition-colors">
+      <div class="mt-2 text-[13px] text-[#536471] text-center">
+        Code expires in: <span id="timer" class="font-bold text-[#1d9bf0]">00:15</span>
+      </div>
+      <button type="submit" id="verify-btn" class="w-full mt-6 p-4 rounded-full font-bold text-[17px] border-none cursor-pointer transition-colors duration-200 bg-[#1d9bf0] text-white hover:bg-[#1a8cd8] disabled:opacity-50 disabled:cursor-not-allowed">Verify OTP</button>
+    </form>
+
+    <div id="resend-container" class="mt-4 text-center hidden">
+      {% if resend_count < 2 %}
+      <a href="/resend-otp" class="text-[#1d9bf0] font-medium hover:underline">Resend OTP ({{ 2 - resend_count }} left)</a>
+      {% else %}
+      <div class="text-[#f4212e] text-[13px] font-bold mb-3">No resends remaining</div>
+      <a href="/logout" class="text-[#1d9bf0] font-medium hover:underline">Return to Login</a>
+      {% endif %}
+    </div>
+
+    <div class="mt-8 text-center">
+      <a href="/logout" class="text-[#1d9bf0] text-[14px] font-medium hover:underline">← Logout</a>
+    </div>
   </div>
+</div>
 
   <script>
     // ── Live Date Time Badge ──
@@ -208,6 +128,11 @@
         timerEl.textContent = "Expired";
         timerEl.className = "font-semibold text-brand-red animate-pulse";
 
+        // Mask the Demo OTP
+        const otpDisplay = document.getElementById('otp-display');
+        if (otpDisplay) {
+          otpDisplay.textContent = '******';
+        }
 
         // Disable OTP input and Verify button
         const otpInput = document.getElementById('otp');

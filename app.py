@@ -57,6 +57,25 @@ def is_unusual_hour(client_hour=None):
     return unusual
 
 
+import urllib.request
+
+def check_ip_risk(ip, known_country):
+    if not ip or ip in ["127.0.0.1", "localhost", "::1"] or ip.startswith("192.168.") or ip.startswith("10."):
+        return 0, 0, "Local"
+    try:
+        url = f"http://ip-api.com/json/{ip}?fields=status,country,proxy,hosting"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode())
+            if data.get("status") == "success":
+                is_anonymous = 1 if (data.get("proxy", False) or data.get("hosting", False)) else 0
+                country = data.get("country", "Unknown")
+                is_unusual = 1 if (known_country and country != "Unknown" and known_country != "Unknown" and known_country != "Local" and country != known_country) else 0
+                return is_unusual, is_anonymous, country
+    except Exception as e:
+        print(f"[IP API error]: {e}")
+    return 0, 0, "Unknown"
+
 def init_tracker(username):
     if username not in login_tracker:
         login_tracker[username] = {
@@ -65,7 +84,7 @@ def init_tracker(username):
             "blocked_until": 0,
         }
 
-def extract_features(username, device_id, password_correct, client_hour=None):
+def extract_features(username, device_id, password_correct, client_hour=None, unusual_location=0, anonymous_ip=0):
     init_tracker(username)
     t = login_tracker[username]
     now = time.time()
@@ -82,7 +101,9 @@ def extract_features(username, device_id, password_correct, client_hour=None):
         "unknown_device":  unknown_device,
         "unusual_hour":    unusual_hour,
         "password_match":  1 if password_correct else 0,
-        "otp_resends": session.get("resend_count", 0)
+        "otp_resends": session.get("resend_count", 0),
+        "unusual_location": unusual_location,
+        "anonymous_ip": anonymous_ip
     }
     t["last_attempt_time"] = now
     return features
@@ -113,13 +134,14 @@ def login():
         device_id = request.form.get("device_id", "unknown")
         client_hour = request.form.get("client_hour")
         client_time = request.form.get("client_time")
-        ip        = request.remote_addr
+        spoofed_ip  = request.form.get("spoofed_ip", "").strip()
+        ip          = spoofed_ip if spoofed_ip else request.remote_addr
 
         if client_time:
             session["client_time"] = client_time
 
         # ── reCAPTCHA verification ──
-        show_recaptcha = (session.get("failed_attempts", 0) >= 3)
+        show_recaptcha = True
         if show_recaptcha:
             recaptcha_response = request.form.get("g-recaptcha-response")
             if not recaptcha_response:
@@ -179,10 +201,13 @@ def login():
         # ── verify password ──
         user_data = users.get(username)
         password_correct = False
+        known_country = None
         if user_data:
             password_correct = verify_password(user_data.get("password", ""), password)
+            known_country = user_data.get("known_country")
 
-        features = extract_features(username, device_id, password_correct, client_hour)
+        unusual_location, anonymous_ip, current_country = check_ip_risk(ip, known_country)
+        features = extract_features(username, device_id, password_correct, client_hour, unusual_location, anonymous_ip)
         risk_int, confidence, risk_level, rule_score = predict_risk(features)
 
         # ── wrong password ──
@@ -202,19 +227,31 @@ def login():
                     "ml_confidence": confidence, "action": "blocked", "outcome": "threshold_exceeded"
                 })
                 return render_template("blocked.html", remaining=BLOCK_DURATION, username=username)
-            flash(f"Invalid credentials. Risk: {risk_level.upper()} | Score: {rule_score} | Attempt {t['failed_attempts']}/{BLOCK_THRESHOLD}", "error")
+                
+            if t["failed_attempts"] >= 3:
+                session["temp_username"] = username
+                session["pending_fallback_otp"] = True
+                return render_template("login.html", show_recaptcha=show_recaptcha, fallback_otp=True, failed_attempts=t["failed_attempts"], threshold=BLOCK_THRESHOLD)
+                
+            flash(f"Invalid credentials. Risk: {risk_level.upper()} | Attempt {t['failed_attempts']}/{BLOCK_THRESHOLD}", "error")
             return redirect(url_for("login"))
 
         # correct password 
+        prev_failed_attempts = t["failed_attempts"]
         t["failed_attempts"] = 0
         session["failed_attempts"] = 0
 
-        # Update known_device on first login
+        # Update known_device and known_country on first login
+        updated_users = False
         if not users[username].get("known_device"):
             users[username]["known_device"] = device_id
-            save_json(USERS_FILE, users)
             features["unknown_device"] = 0   # update after registration
-            risk_int, confidence, risk_level, rule_score = predict_risk(features)
+            updated_users = True
+        
+        if not users[username].get("known_country") and current_country not in ["Local", "Unknown"]:
+            users[username]["known_country"] = current_country
+            features["unusual_location"] = 0
+            updated_users = True
 
         # ── high risk → block
         if risk_level == "high":
@@ -225,6 +262,37 @@ def login():
                 "ml_confidence": confidence, "action": "blocked", "outcome": "high_risk"
             })
             return render_template("blocked.html", remaining=BLOCK_DURATION, username=username)
+
+        # ── Anomaly Check ──
+        anomaly_msg = None
+        if features["unknown_device"] == 1 or features.get("unusual_location") == 1 or features.get("anonymous_ip") == 1 or features.get("unusual_hour") == 1:
+            anomaly_msg = "Unusual behaviour detected."
+
+        if anomaly_msg:
+            session["temp_username"] = username
+            session["pending_anomaly_confirm"] = True
+            session["temp_device_id"] = device_id
+            session["temp_risk_level"] = risk_level
+            session["temp_rule_score"] = rule_score
+            session["temp_confidence"] = confidence
+            session["temp_features"] = features
+            return render_template("login.html", show_recaptcha=show_recaptcha, anomaly_msg=anomaly_msg)
+
+        # ── Normal & Correct Bypass ──
+        if risk_level == "low" and prev_failed_attempts < 3:
+            session["username"] = username
+            session["risk_level"] = risk_level
+            session["rule_score"] = rule_score
+            session["confidence"] = confidence
+            session["device_id"] = device_id
+            session["authenticated"] = True
+            session["auth_method"] = "password_only"
+            append_log({
+                **features, "username": username, "device_id": device_id,
+                "ip": ip, "risk_level": risk_level, "rule_score": rule_score,
+                "ml_confidence": confidence, "action": "otp_bypassed", "outcome": "access_granted"
+            })
+            return redirect(url_for("success"))
 
         # ── medium risk → delay ──
         if risk_level == "medium":
@@ -243,6 +311,9 @@ def login():
         session["device_id"]    = device_id
         session["demo_otp"]     = otp   # shown on OTP page for demo
         session["resend_count"] = 0
+        session["unusual_location"] = unusual_location
+        session["anonymous_ip"] = anonymous_ip
+        session["features"] = features
 
         append_log({
             **features, "username": username, "device_id": device_id,
@@ -252,7 +323,7 @@ def login():
         print(f"[DEMO OTP for {username}]: {otp}")
         return redirect(url_for("otp_page"))
 
-    show_recaptcha = (session.get("failed_attempts", 0) >= 3)
+    show_recaptcha = True
     return render_template("login.html", show_recaptcha=show_recaptcha)
 
 
@@ -282,14 +353,33 @@ def otp_page():
         if entered == correct:
             otp_store.pop(username, None)
             save_json(OTP_FILE, otp_store)
+            
+            outcome = "access_granted_passwordless" if session.get("passwordless_fallback") else "access_granted"
             append_log({
                 "username": username, "device_id": session.get("device_id"),
                 "ip": request.remote_addr, "risk_level": risk_level,
                 "rule_score": rule_score, "ml_confidence": confidence,
-                "action": "otp_verified", "outcome": "access_granted",
+                "action": "otp_verified", "outcome": outcome,
                 "failed_attempts": 0, "short_interval": 0,
                 "unknown_device": 0, "unusual_hour": 0, "password_match": 1,
             })
+            
+            # Update device if it was unknown_device confirmation
+            if session.get("pending_anomaly_confirm"):
+                if session.get("device_id") != "unknown":
+                    users = load_json(USERS_FILE, {})
+                    if username in users:
+                        users[username]["known_device"] = session.get("device_id")
+                        save_json(USERS_FILE, users)
+                session.pop("pending_anomaly_confirm", None)
+            
+            is_fallback = session.get("passwordless_fallback")
+            session["auth_method"] = "otp_only" if is_fallback else "password_and_otp"
+            
+            session.pop("passwordless_fallback", None)
+            session.pop("pending_fallback_otp", None)
+            session.pop("temp_username", None)
+                
             session["authenticated"] = True
             return redirect(url_for("success"))
 
@@ -314,6 +404,54 @@ def otp_page():
         rule_score=rule_score, confidence=confidence, demo_otp=demo_otp,
         remaining_seconds=remaining_seconds, resend_count=resend_count)
 
+@app.route("/send-device-otp", methods=["POST", "GET"])
+def send_device_otp():
+    username = session.get("temp_username")
+    if not username:
+        return redirect(url_for("login"))
+    
+    is_fallback = session.get("pending_fallback_otp")
+    is_anomaly = session.get("pending_anomaly_confirm")
+    
+    if not (is_fallback or is_anomaly):
+        return redirect(url_for("login"))
+        
+    otp = generate_otp()
+    otp_store = load_json(OTP_FILE, {})
+    otp_store[username] = {"otp": otp, "expires": time.time() + 15}
+    save_json(OTP_FILE, otp_store)
+    
+    session["username"] = username
+    session["demo_otp"] = otp
+    session["resend_count"] = 0
+    session["passwordless_fallback"] = True if is_fallback else False
+    
+    if is_anomaly:
+        session["risk_level"] = session.get("temp_risk_level", "medium")
+        session["rule_score"] = session.get("temp_rule_score", 0)
+        session["confidence"] = session.get("temp_confidence", 0)
+        session["device_id"] = session.get("temp_device_id", "unknown")
+        
+        features = session.get("temp_features", {})
+        session["features"] = features
+        append_log({
+            **features, "username": username, "device_id": session.get("device_id"),
+            "ip": request.remote_addr, "risk_level": session.get("risk_level"), 
+            "rule_score": session.get("rule_score"), "ml_confidence": session.get("confidence"), 
+            "action": "otp_sent", "outcome": "device_confirm_pending"
+        })
+    else:
+        # Fallback case
+        session["risk_level"] = "medium"
+        session["features"] = {"failed_attempts": 3, "password_match": 0}
+        append_log({
+            "username": username, "ip": request.remote_addr,
+            "action": "otp_sent", "outcome": "passwordless_fallback_pending",
+            "risk_level": "medium", "rule_score": 0, "ml_confidence": 0
+        })
+
+    print(f"[DEMO OTP for {username}]: {otp}")
+    return redirect(url_for("otp_page"))
 
 @app.route("/resend-otp")
 def resend_otp():
@@ -324,17 +462,19 @@ def resend_otp():
     resend_count = session.get("resend_count", 0)
 
     if resend_count >= 2:
-        flash("Maximum OTP resend limit reached. Please log in again.", "error")
+        init_tracker(username)
+        t = login_tracker[username]
+        t["blocked_until"] = time.time() + BLOCK_DURATION
+        
+        features = session.get("features", {})
         append_log({
-            "username": username, "device_id": session.get("device_id"),
-            "ip": request.remote_addr, "risk_level": session.get("risk_level", "low"),
+            **features, "username": username, "device_id": session.get("device_id"),
+            "ip": request.remote_addr, "risk_level": "high",
             "rule_score": session.get("rule_score", 0), "ml_confidence": session.get("confidence", 0),
-            "action": "otp_resend_blocked", "outcome": "resend_limit_exceeded",
-            "failed_attempts": 0, "short_interval": 0,
-            "unknown_device": 0, "unusual_hour": 0, "password_match": 1,
+            "action": "blocked", "outcome": "resend_limit_exceeded"
         })
         session.clear()
-        return redirect(url_for("login"))
+        return render_template("blocked.html", remaining=BLOCK_DURATION, username=username)
 
     # Increment resend count
     resend_count += 1
@@ -349,7 +489,7 @@ def resend_otp():
     session["demo_otp"] = otp
 
     # Re-evaluate threat risk after resend , block if high risk
-    features = extract_features(username, session.get("device_id"), True)
+    features = extract_features(username, session.get("device_id"), True, None, session.get("unusual_location", 0), session.get("anonymous_ip", 0))
     risk_int, confidence, risk_level, rule_score = predict_risk(features)
 
     session["risk_level"] = risk_level
@@ -395,14 +535,32 @@ def success():
         username=session.get("username"),
         risk_level=session.get("risk_level", "low"),
         rule_score=session.get("rule_score", 0),
-        confidence=session.get("confidence", 0))
+        confidence=session.get("confidence", 0),
+        auth_method=session.get("auth_method", "password_and_otp"),
+        features=session.get("features", {}))
 
 
 @app.route("/logs")
 def logs():
     all_logs = load_json(LOG_FILE, [])
     all_logs.reverse()   # newest first
-    return render_template("logs.html", logs=all_logs)
+    
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    total_pages = (len(all_logs) + per_page - 1) // per_page
+    if total_pages == 0:
+        total_pages = 1
+    if page < 1:
+        page = 1
+    elif page > total_pages:
+        page = total_pages
+        
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_logs = all_logs[start:end]
+    
+    # Passing total logs for the summary cards
+    return render_template("logs.html", logs=paginated_logs, all_logs=all_logs, page=page, total_pages=total_pages)
 
 
 @app.route("/clear-logs", methods=["POST"])
@@ -415,6 +573,7 @@ def clear_logs():
 @app.route("/logout")
 def logout():
     session.clear()
+    login_tracker.clear()
     return redirect(url_for("login"))
 
 

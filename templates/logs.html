@@ -33,119 +33,104 @@
 <body class="font-sans antialiased text-slate-200">
 <!-- ── Live Date Time Badge ── -->
 <div class="absolute top-6 left-1/2 -translate-x-1/2 z-50">
-  <div class="bg-brand-bg2/60 border border-brand-cyan/20 px-4 py-2 rounded-full backdrop-blur-md shadow-lg text-[11px] font-mono tracking-wider text-slate-300 whitespace-nowrap flex items-center gap-2">
-    <span class="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse-bar"></span>
+  <div class="bg-white border border-[#cfd9de] px-4 py-2 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.05)] text-[11px] font-mono tracking-wider text-[#536471] flex items-center gap-2">
+    <span class="w-1.5 h-1.5 rounded-full bg-[#1d9bf0] animate-pulse-bar"></span>
     <span id="live-clock">Loading time...</span>
   </div>
 </div>
 
-<div class="relative z-10 max-w-[1100px] mx-auto py-8 px-6">
+<div class="min-h-screen bg-[#f7f9f9] py-8 px-4 font-sans text-[#0f1419]">
+  <div class="max-w-[1400px] mx-auto bg-white rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] p-8">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h2 class="text-2xl font-bold m-0">Login Attempt Logs</h2>
+      </div>
+      <div class="flex gap-4 items-center">
+        <a href="/" class="text-sm font-semibold text-[#536471] hover:text-[#0f1419] no-underline">← Back</a>
+        <form method="POST" action="/clear-logs" onsubmit="return confirm('Clear all logs?')">
+          <button type="submit" class="px-5 py-2.5 bg-[#1D9BF0] text-white rounded-lg font-semibold border-none cursor-pointer hover:bg-[#272c30] transition-colors">Clear Logs</button>
+        </form>
+      </div>
+    </div>
 
-  <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
-    <div>
-      <h2 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">📋 Login Attempt Logs</h2>
-      <p class="text-xs text-slate-400 mt-1">
-        Real-time audit trail — all login events with AI/ML risk scores
-      </p>
-    </div>
-    <div class="flex gap-3 items-center">
-      <a href="/" class="px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10 hover:text-white no-underline">← Login</a>
-      <form method="POST" action="/clear-logs" onsubmit="return confirm('Clear all logs?')">
-        <button type="submit" class="px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 bg-gradient-to-r from-red-700 to-brand-red text-white shadow-lg cursor-pointer">🗑 Clear Logs</button>
-      </form>
-    </div>
-  </div>
+    {% set total = all_logs|length %}
+    {% set granted = all_logs|selectattr('outcome','equalto','access_granted')|list|length %}
+    {% set blocked_count = all_logs|selectattr('action','equalto','blocked')|list|length %}
+    {% set high_risk = all_logs|selectattr('risk_level','equalto','high')|list|length %}
 
-  <!-- Summary stats -->
-  {% set total = logs|length %}
-  {% set granted = logs|selectattr('outcome','equalto','access_granted')|list|length %}
-  {% set blocked_count = logs|selectattr('action','equalto','blocked')|list|length %}
-  {% set high_risk = logs|selectattr('risk_level','equalto','high')|list|length %}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-[#f7f9f9] p-6 rounded-xl text-center">
+        <div class="text-xs text-[#536471] font-semibold uppercase tracking-wide">Total Events</div>
+        <div class="text-3xl font-bold mt-2 text-[#1d9bf0]">{{ total }}</div>
+      </div>
+      <div class="bg-[#f7f9f9] p-6 rounded-xl text-center">
+        <div class="text-xs text-[#536471] font-semibold uppercase tracking-wide">Access Granted</div>
+        <div class="text-3xl font-bold mt-2 text-[#1d9bf0]">{{ granted }}</div>
+      </div>
+      <div class="bg-[#f7f9f9] p-6 rounded-xl text-center">
+        <div class="text-xs text-[#536471] font-semibold uppercase tracking-wide">Blocked</div>
+        <div class="text-3xl font-bold mt-2 text-[#f4212e]">{{ blocked_count }}</div>
+      </div>
+      <div class="bg-[#f7f9f9] p-6 rounded-xl text-center">
+        <div class="text-xs text-[#536471] font-semibold uppercase tracking-wide">High-Risk</div>
+        <div class="text-3xl font-bold mt-2 text-[#f4212e]">{{ high_risk }}</div>
+      </div>
+    </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-[800px] mb-6">
-    <div class="bg-white/4 border border-white/5 rounded-xl p-3.5">
-      <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Total Events</div>
-      <div class="text-xl font-bold font-mono text-brand-cyan">{{ total }}</div>
-    </div>
-    <div class="bg-white/4 border border-white/5 rounded-xl p-3.5">
-      <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Access Granted</div>
-      <div class="text-xl font-bold font-mono text-brand-green">{{ granted }}</div>
-    </div>
-    <div class="bg-white/4 border border-white/5 rounded-xl p-3.5">
-      <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Blocked</div>
-      <div class="text-xl font-bold font-mono text-brand-red">{{ blocked_count }}</div>
-    </div>
-    <div class="bg-white/4 border border-white/5 rounded-xl p-3.5">
-      <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">High-Risk Events</div>
-      <div class="text-xl font-bold font-mono text-brand-red">{{ high_risk }}</div>
-    </div>
-  </div>
-
-  {% if logs %}
-  <div class="bg-brand-bg2/85 border border-brand-cyan/15 rounded-[20px] p-0 overflow-hidden shadow-2xl">
+    {% if logs %}
     <div class="overflow-x-auto">
-      <table class="w-full border-collapse text-left text-xs">
+      <table class="w-full border-separate border-spacing-0 text-sm">
         <thead>
-          <tr class="bg-white/[0.03] border-b border-white/10">
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">#</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Timestamp</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">User</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">IP Address</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Risk Level</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Score</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">ML Conf.</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Failed Att.</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Rapid</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Unk. Device</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Unusual Hr</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Action</th>
-            <th class="p-3.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Outcome</th>
+          <tr>
+            <th class="p-4 text-[#536471] font-semibold text-xs uppercase bg-[#f7f9f9] border-b border-[#cfd9de] text-left">Timestamp</th>
+            <th class="p-4 text-[#536471] font-semibold text-xs uppercase bg-[#f7f9f9] border-b border-[#cfd9de] text-left">User</th>
+            <th class="p-4 text-[#536471] font-semibold text-xs uppercase bg-[#f7f9f9] border-b border-[#cfd9de] text-left">IP Address</th>
+            <th class="p-4 text-[#536471] font-semibold text-xs uppercase bg-[#f7f9f9] border-b border-[#cfd9de] text-left">Risk</th>
+            <th class="p-4 text-[#536471] font-semibold text-xs uppercase bg-[#f7f9f9] border-b border-[#cfd9de] text-left">Flags</th>
+            <th class="p-4 text-[#536471] font-semibold text-xs uppercase bg-[#f7f9f9] border-b border-[#cfd9de] text-left">Action</th>
+            <th class="p-4 text-[#536471] font-semibold text-xs uppercase bg-[#f7f9f9] border-b border-[#cfd9de] text-left">Outcome</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-white/5">
+        <tbody>
           {% for log in logs %}
-          <tr class="hover:bg-white/[0.02] transition">
-            <td class="p-3.5 text-slate-500">{{ log.id }}</td>
-            <td class="p-3.5 font-mono text-[11px] text-slate-400 whitespace-nowrap">{{ log.timestamp }}</td>
-            <td class="p-3.5 text-white font-semibold">{{ log.username }}</td>
-            <td class="p-3.5 font-mono text-[11px] text-slate-300">{{ log.ip }}</td>
-            <td class="p-3.5">
-              <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider
-                {% if log.risk_level == 'low' %}bg-brand-green/10 text-brand-green border border-brand-green/30
-                {% elif log.risk_level == 'medium' %}bg-brand-yellow/10 text-brand-yellow border border-brand-yellow/30
-                {% else %}bg-brand-red/15 text-brand-red border border-brand-red/35{% endif %}">
-                {{ log.risk_level|upper }}
+          <tr>
+            <td class="p-4 border-b border-[#eff3f4] text-[#536471] font-mono text-xs whitespace-nowrap">{{ log.timestamp }}</td>
+            <td class="p-4 border-b border-[#eff3f4] font-semibold">{{ log.username }}</td>
+            <td class="p-4 border-b border-[#eff3f4] text-[#536471] font-mono text-xs">{{ log.ip }}</td>
+            <td class="p-4 border-b border-[#eff3f4]">
+              <span class="px-2 py-1 rounded text-xs font-semibold {% if log.risk_level == 'low' %}bg-[#e6f6ec] text-[#0f5132]{% elif log.risk_level == 'medium' %}bg-[#eff3f4] text-[#536471]{% else %}bg-[#fdede8] text-[#842029]{% endif %}">
+                {{ log.risk_level|capitalize }}
               </span>
             </td>
-            <td class="p-3.5 text-center font-mono font-bold">
-              <span class="{% if log.rule_score >= 5 %}text-brand-red{% elif log.rule_score >= 3 %}text-brand-yellow{% else %}text-brand-green{% endif %}">
-                {{ log.rule_score }}
-              </span>
+            <td class="p-4 border-b border-[#eff3f4] text-[#536471] text-xs">
+              {% set flags = [] %}
+              {% if log.failed_attempts and log.failed_attempts >= 3 %}{% set _ = flags.append('Failed Attempts') %}{% endif %}
+              {% if log.short_interval %}{% set _ = flags.append('Rapid Auth') %}{% endif %}
+              {% if log.unknown_device %}{% set _ = flags.append('Unknown Device') %}{% endif %}
+              {% if log.unusual_hour %}{% set _ = flags.append('Unusual Hour') %}{% endif %}
+              {% if log.unusual_location %}{% set _ = flags.append('Unusual Location') %}{% endif %}
+              {% if log.anonymous_ip %}{% set _ = flags.append('Anonymous IP') %}{% endif %}
+              {% if flags %}
+                {{ flags | join(', ') }}
+              {% else %}
+                —
+              {% endif %}
             </td>
-            <td class="p-3.5 font-mono text-brand-cyan">{{ log.ml_confidence }}%</td>
-            <td class="p-3.5 text-center">
-              <span class="{% if log.failed_attempts >= 3 %}text-brand-red font-bold{% else %}text-slate-400{% endif %}">
-                {{ log.failed_attempts }}
-              </span>
-            </td>
-            <td class="p-3.5 text-center text-sm">{{ '⚡' if log.short_interval else '—' }}</td>
-            <td class="p-3.5 text-center text-sm">{{ '⚠️' if log.unknown_device else '—' }}</td>
-            <td class="p-3.5 text-center text-sm">{{ '🌙' if log.unusual_hour else '—' }}</td>
-            <td class="p-3.5 text-xs text-slate-400">{{ log.action }}</td>
-            <td class="p-3.5 whitespace-nowrap">
+            <td class="p-4 border-b border-[#eff3f4] text-[#536471] text-xs">{{ log.action }}</td>
+            <td class="p-4 border-b border-[#eff3f4] whitespace-nowrap">
               {% set oc = log.outcome %}
               {% if oc == 'access_granted' %}
-                <span class="inline-block px-2.5 py-0.5 rounded font-semibold text-[10px] bg-brand-green/10 text-brand-green border border-brand-green/20">✅ Granted</span>
+                <span class="px-2 py-1 rounded text-xs font-semibold bg-[#e6f6ec] text-[#0f5132]">Granted</span>
               {% elif oc == 'pending_mfa' %}
-                <span class="inline-block px-2.5 py-0.5 rounded font-semibold text-[10px] bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20">⏳ Pending MFA</span>
+                <span class="px-2 py-1 rounded text-xs font-semibold bg-[#eff3f4] text-[#536471]">Pending MFA</span>
               {% elif oc == 'wrong_password' %}
-                <span class="inline-block px-2.5 py-0.5 rounded font-semibold text-[10px] bg-brand-red/10 text-brand-red border border-brand-red/20">❌ Wrong Pwd</span>
+                <span class="px-2 py-1 rounded text-xs font-semibold bg-[#fdede8] text-[#842029]">Wrong Pwd</span>
               {% elif oc == 'threshold_exceeded' or oc == 'high_risk' %}
-                <span class="inline-block px-2.5 py-0.5 rounded font-bold text-[10px] bg-brand-red/20 text-brand-red border border-brand-red/30">🚫 Blocked</span>
+                <span class="px-2 py-1 rounded text-xs font-semibold bg-[#fdede8] text-[#842029]">Blocked</span>
               {% elif oc == 'wrong_otp' %}
-                <span class="inline-block px-2.5 py-0.5 rounded font-semibold text-[10px] bg-brand-red/10 text-brand-red border border-brand-red/20">🔑 Wrong OTP</span>
+                <span class="px-2 py-1 rounded text-xs font-semibold bg-[#fdede8] text-[#842029]">Wrong OTP</span>
               {% else %}
-                <span class="inline-block px-2.5 py-0.5 rounded font-semibold text-[10px] bg-brand-red/10 text-brand-red border border-brand-red/20">{{ oc }}</span>
+                <span class="px-2 py-1 rounded text-xs font-semibold bg-[#eff3f4] text-[#536471]">{{ oc }}</span>
               {% endif %}
             </td>
           </tr>
@@ -153,14 +138,31 @@
         </tbody>
       </table>
     </div>
+    
+    <div class="flex justify-between items-center mt-6">
+      <div class="text-sm text-[#536471]">
+        Page {{ page }} of {{ total_pages }}
+      </div>
+      <div class="flex gap-2">
+        {% if page > 1 %}
+        <a href="/logs?page={{ page - 1 }}" class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-semibold text-[#0f1419] no-underline">Previous</a>
+        {% else %}
+        <span class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-400 cursor-not-allowed">Previous</span>
+        {% endif %}
+        
+        {% if page < total_pages %}
+        <a href="/logs?page={{ page + 1 }}" class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-semibold text-[#0f1419] no-underline">Next</a>
+        {% else %}
+        <span class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-400 cursor-not-allowed">Next</span>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="bg-[#f7f9f9] rounded-xl p-12 text-center">
+      <p class="text-[#536471] text-[15px] m-0">No login events. <a href="/" class="text-[#1d9bf0] font-semibold no-underline hover:underline">Go back</a>.</p>
+    </div>
+    {% endif %}
   </div>
-  {% else %}
-  <div class="bg-brand-bg2/85 border border-brand-cyan/15 rounded-[20px] p-12 text-center shadow-2xl">
-    <p class="text-4xl mb-4">📭</p>
-    <p class="text-slate-400">No login events recorded yet. <a href="/" class="text-brand-cyan hover:underline font-semibold">Try logging in</a>.</p>
-  </div>
-  {% endif %}
-
 </div>
 <script>
   // ── Live Date Time Badge ──

@@ -33,77 +33,95 @@
 <body class="font-sans antialiased text-slate-200">
 <!-- ── Live Date Time Badge ── -->
 <div class="absolute top-6 left-1/2 -translate-x-1/2 z-50">
-  <div class="bg-brand-bg2/60 border border-brand-cyan/20 px-4 py-2 rounded-full backdrop-blur-md shadow-lg text-[11px] font-mono tracking-wider text-slate-300 whitespace-nowrap flex items-center gap-2">
-    <span class="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse-bar"></span>
+  <div class="bg-white border border-[#cfd9de] px-4 py-2 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.05)] text-[11px] font-mono tracking-wider text-[#536471] flex items-center gap-2">
+    <span class="w-1.5 h-1.5 rounded-full bg-[#1d9bf0] animate-pulse-bar"></span>
     <span id="live-clock">Loading time...</span>
   </div>
 </div>
 
-<div class="relative z-10 min-h-screen flex items-center justify-center py-8 px-4">
-  <div class="w-full max-w-[440px]">
+<div class="relative z-10 min-h-screen flex items-center justify-center py-8 px-4 bg-white text-[#0f1419] font-sans transition-colors duration-300">
+  <div class="w-full max-w-[440px] mx-auto p-8 border border-slate-200 rounded-2xl shadow-sm bg-white text-center">
 
-    <!-- ── Main Card ── -->
-    <div class="w-full bg-brand-bg2/85 border border-brand-green/20 rounded-[20px] p-8 lg:p-10 backdrop-blur-3xl shadow-[0_0_40px_rgba(0,255,136,0.07),0_24px_64px_rgba(0,0,0,0.5)]">
-      <div class="text-6xl text-center mb-4 animate-pop">✅</div>
-      <h2 class="text-center text-brand-green text-xl font-bold mb-2">Authentication Successful</h2>
-      <p class="text-center text-slate-400 text-sm mb-5">
-        Welcome back, <strong class="text-white">{{ username }}</strong>. Both factors verified.
-      </p>
+    <h2 class="text-xl font-bold tracking-tight m-0 mb-1">Authentication Successful</h2>
+    <p class="text-[14px] text-[#536471] mb-6">
+      Welcome back, <strong class="text-[#0f1419]">{{ username }}</strong>.
+    </p>
 
-      <!-- Risk summary -->
-      <div class="flex justify-center mb-5">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider
-          {% if risk_level=='low' %}bg-brand-green/10 text-brand-green border border-brand-green/30
-          {% elif risk_level=='medium' %}bg-brand-yellow/10 text-brand-yellow border border-brand-yellow/30
-          {% else %}bg-brand-red/15 text-brand-red border border-brand-red/35{% endif %}">
-          {% if risk_level=='low' %}🟢{% elif risk_level=='medium' %}🟡{% else %}🔴{% endif %}
-          Session Risk: {{ risk_level|upper }}
-        </span>
-      </div>
+    <!-- Risk summary -->
+    <div class="flex justify-center mb-6">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider
+        {% if risk_level=='low' %}bg-[#e6f6ec] text-[#0f5132]
+        {% elif risk_level=='medium' %}bg-[#fff8e6] text-[#664d03]
+        {% else %}bg-[#fdede8] text-[#842029]{% endif %}">
+        {% if risk_level=='low' %}{% elif risk_level=='medium' %}{% else %}{% endif %}
+        Risk: {{ risk_level|upper }}
+      </span>
+    </div>
 
-      <div class="grid grid-cols-2 gap-3 my-5">
-        <div class="bg-white/4 border border-white/5 rounded-xl p-3">
-          <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Rule Score</div>
-          <div class="text-base lg:text-lg font-bold font-mono {% if rule_score < 3 %}text-brand-green{% elif rule_score < 5 %}text-brand-yellow{% else %}text-brand-red{% endif %}">
-            {{ rule_score }} / 8
-          </div>
-        </div>
-        <div class="bg-white/4 border border-white/5 rounded-xl p-3">
-          <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">ML Confidence</div>
-          <div class="text-base lg:text-lg font-bold font-mono text-brand-cyan">{{ confidence }}%</div>
-        </div>
-        <div class="bg-white/4 border border-white/5 rounded-xl p-3">
-          <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Auth Method</div>
-          <div class="text-xs font-bold font-mono text-brand-green">Password + OTP</div>
-        </div>
-        <div class="bg-white/4 border border-white/5 rounded-xl p-3">
-          <div class="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">MFA Status</div>
-          <div class="text-xs font-bold font-mono text-brand-green">Verified ✓</div>
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+        <div class="text-[10px] text-[#536471] font-bold mb-1 uppercase tracking-wider">Auth Method</div>
+        <div class="text-[13px] font-bold font-mono text-[#0f1419]">
+          {% if auth_method == 'password_only' %}PASSWORD ONLY
+          {% elif auth_method == 'otp_only' %}OTP ONLY
+          {% else %}PASSWORD + OTP{% endif %}
         </div>
       </div>
-
-      <hr class="border-0 border-t border-white/10 my-6">
-
-      <div class="bg-brand-green/5 border border-brand-green/15 rounded-xl p-4 mb-6">
-        <p class="text-[11px] text-slate-400 leading-relaxed">
-          🛡️ <strong class="text-brand-green">How the system protected you:</strong><br>
-          ✔ Password was verified against the credential store<br>
-          ✔ 5 behavioral features were extracted and scored<br>
-          ✔ Decision Tree ML model classified the risk level<br>
-          ✔ OTP was generated and verified as the second factor<br>
-          ✔ Access granted only after both factors passed
-        </p>
-      </div>
-
-      <div class="flex gap-3">
-        <a href="/logs" class="flex-1 p-3 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center gap-2 cursor-pointer bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10 hover:text-white no-underline">
-          📋 Attack Logs
-        </a>
-        <a href="/logout" class="flex-1 p-3 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-blue-600 to-brand-cyan text-white shadow-[0_4px_20px_rgba(0,150,255,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_28px_rgba(0,150,255,0.45)] active:translate-y-0 no-underline">
-          🔒 Logout
-        </a>
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+        <div class="text-[10px] text-[#536471] font-bold mb-1 uppercase tracking-wider">MFA Status</div>
+        <div class="text-[13px] font-bold font-mono {% if auth_method == 'password_only' %}text-[#536471]{% else %}text-[#0f5132]{% endif %}">
+          {% if auth_method == 'password_only' %}Bypassed (Low Risk)
+          {% else %}Verified ✓{% endif %}
+        </div>
       </div>
     </div>
+
+    <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 text-left">
+      <p class="text-[12px] text-[#536471] leading-relaxed m-0">
+        <strong class="text-[#0f1419]">Security Checklist:</strong><br>
+        {% if auth_method != 'otp_only' %}
+        <span class="text-[#1d9bf0] mr-1">✔</span> Password verified<br>
+        {% else %}
+        <span class="text-[#842029] mr-1">✖</span> Password skipped (Fallback)<br>
+        {% endif %}
+        
+        <span class="text-[#1d9bf0] mr-1">✔</span> 8 ML behavioral features scored<br>
+
+        {% if features.get('unknown_device') == 1 %}
+        <span class="text-[#b59a22] mr-1">⚠</span> Unrecognized device detected<br>
+        {% endif %}
+        {% if features.get('unusual_location') == 1 %}
+        <span class="text-[#b59a22] mr-1">⚠</span> Unusual location detected<br>
+        {% endif %}
+        {% if features.get('anonymous_ip') == 1 %}
+        <span class="text-[#b59a22] mr-1">⚠</span> Anonymous IP (VPN/Proxy) detected<br>
+        {% endif %}
+        {% if features.get('unusual_hour') == 1 %}
+        <span class="text-[#b59a22] mr-1">⚠</span> Login at an unusual hour<br>
+        {% endif %}
+        {% if features.get('failed_attempts', 0) > 0 %}
+        <span class="text-[#b59a22] mr-1">⚠</span> Previous failed attempts: {{ features.get('failed_attempts') }}<br>
+        {% endif %}
+
+        <span class="text-[#1d9bf0] mr-1">✔</span> Decision Tree classification: {{ risk_level|upper }}<br>
+        
+        {% if auth_method == 'password_only' %}
+        <span class="text-[#536471] mr-1">✔</span> OTP bypassed due to high trust
+        {% else %}
+        <span class="text-[#1d9bf0] mr-1">✔</span> OTP second-factor verified
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <a href="/logout" class="w-full py-3.5 rounded-full font-bold text-[15px] cursor-pointer transition-colors duration-200 bg-[#1d9bf0] text-white hover:bg-[#1a8cd8] shadow-sm border-0 no-underline block text-center">
+        Logout
+      </a>
+    </div>
+    <p class="mt-6 text-center text-[13px] m-0">
+      <a class="text-[#1d9bf0] hover:underline font-semibold" href="/logs">View Attack Logs</a>
+    </p>
+
   </div>
 </div>
 <script>
