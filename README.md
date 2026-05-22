@@ -35,10 +35,10 @@ The application is pre-configured with the following test accounts:
 
 **User 1**
 *   Username: `stud1`
-*   Password: `1234` (or `123` depending on local setup)
+*   Password: `stud123`
 *   Known Device: `device-01`
 
 **User 2**
 *   Username: `stud2`
-*   Password: `1234` (or `123` depending on local setup)
+*   Password: `stud234` (or `123` depending on local setup)
 *   Known Device: `device-02`
