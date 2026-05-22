@@ -40,8 +40,14 @@
   </div>
 </div>
 
-<!-- Top Left Demo Panel -->
-<div class="fixed top-6 left-6 z-50 w-[300px] p-5 bg-white border border-slate-200 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+<!-- Demo Tools Toggle Button -->
+<button id="demo-toggle" type="button" class="fixed top-1/2 left-0 -translate-y-1/2 z-50 bg-[#1d9bf0] text-white p-3 rounded-r-xl shadow-lg border-none cursor-pointer flex items-center justify-center transition-all duration-300 hover:bg-[#1a8cd8]">
+  <svg id="demo-icon-open" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+  <svg id="demo-icon-close" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+</button>
+
+<!-- Left Side Demo Panel Drawer -->
+<div id="demo-panel" class="fixed top-1/2 -translate-y-1/2 left-0 z-40 w-[300px] p-5 bg-white border border-slate-200 rounded-r-2xl shadow-[8px_0_24px_rgba(0,0,0,0.08)] transform -translate-x-full transition-transform duration-300">
   <div class="flex items-center justify-between mb-4">
     <h3 class="text-[13px] font-bold text-[#0f1419] uppercase tracking-wider m-0">🛠 Demo Tools</h3>
   </div>
@@ -173,11 +179,27 @@
   }
 
   const detectedFingerprint = fingerprint();
-  document.getElementById('fingerprint-val').textContent = detectedFingerprint;
+  
+  // ── Demo Drawer Toggle ──
+  const demoToggle = document.getElementById('demo-toggle');
+  const demoPanel = document.getElementById('demo-panel');
+  const demoIconOpen = document.getElementById('demo-icon-open');
+  const demoIconClose = document.getElementById('demo-icon-close');
 
-  function useFingerprint() {
-    document.getElementById('device_id').value = detectedFingerprint;
-  }
+  demoToggle.addEventListener('click', () => {
+    const isClosed = demoPanel.classList.contains('-translate-x-full');
+    if (isClosed) {
+      demoPanel.classList.remove('-translate-x-full');
+      demoToggle.style.transform = 'translate(300px, -50%)';
+      demoIconOpen.classList.add('hidden');
+      demoIconClose.classList.remove('hidden');
+    } else {
+      demoPanel.classList.add('-translate-x-full');
+      demoToggle.style.transform = 'translate(0, -50%)';
+      demoIconOpen.classList.remove('hidden');
+      demoIconClose.classList.add('hidden');
+    }
+  });
 
   // Do not auto-populate device_id on load to force user typing/selection
   document.getElementById('client_hour').value = new Date().getHours();
